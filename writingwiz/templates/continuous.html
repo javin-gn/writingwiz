@@ -1,0 +1,47 @@
+﻿{% extends "base.html" %}
+
+{% block title %}
+	<title>A&#42; Composition - Browse</title>
+{% endblock %}
+
+{% block statics %}
+
+<script type="text/javascript" charset="utf-8">
+
+ 
+function loadQuestions(query, ty){
+	$( "#questions").load('/questions/?type=' + ty + '&query=' + query);
+}
+
+function loadQuestion(query){
+	$( "#questions").load(query);
+}
+
+
+</script>
+	
+{% endblock %}
+
+{% block contents %}
+	
+    <div class="container">
+		<div class="page-header" id="banner">
+		<div class="row">
+	           <div class="col-lg-4">
+				 <br/>
+				 <p>Categories</p>
+	             {{catlist|safe}}
+				 <br/>
+				 <p>Themes</p>
+	             {{themelist|safe}}
+			     <br/>
+                 {{addQuestionBtn|safe}}	 
+	           </div>
+	           <div class="col-lg-6" style="padding: 15px 15px 0 15px;">
+	             {{content|safe}}
+	           </div>
+	     </div>
+	</div>
+   
+
+{% endblock %}

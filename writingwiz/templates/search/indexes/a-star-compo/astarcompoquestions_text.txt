@@ -1,0 +1,4 @@
+{{ object.questionid }}
+{{ object.question}}
+{{ object.questionCategory  }}
+{{ object.questionType }}

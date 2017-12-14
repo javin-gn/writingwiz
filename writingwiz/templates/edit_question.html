@@ -1,0 +1,82 @@
+﻿{% extends "base.html" %}
+
+{% block title %}
+	<title>A&#42; Composition - Edit Question</title>
+{% endblock %}
+
+{% block statics %}
+
+
+{% endblock %}
+
+{% block contents %}
+	
+    <div class="container">
+         <div class="page-header" id="banner">
+	 
+           <div class="row">
+             <div class="col-lg-12">
+			 {% if superuser %}
+			  <h1>Edit Question</h1>
+			     {{content|safe}}
+			     {% if errors %}
+				 <div class="alert alert-dismissable alert-danger">
+				   <button type="button" class="close" data-dismiss="alert">×</button>
+		           <ul>
+		               {% for error in errors %}
+		               <li>{{ error }}</li>
+		               {% endfor %}
+		           </ul>
+				 </div>
+			     {% endif %}
+            
+			     <form enctype="multipart/form-data" class="form-horizontal" style="float:left;" action="/update_question/" method="post">
+				   {% csrf_token %}
+			     <fieldset>
+			       <div class="form-group">
+			         <label for="question" class="col-lg-2 control-label">Question</label>
+			         <div class="col-lg-10">
+						 <textarea name="question" id="question" class="form-control" cols="90" rows="3">{{question}}</textarea>
+			         </div>
+			       </div>
+			           {{picture|safe}}
+			       <div class="form-group">
+			         <label for="type" class="col-lg-2 control-label">Type</label>
+			         <div class="col-lg-10">
+			           {{type|safe}}
+			         </div>
+			       </div>
+				   
+			       <div class="form-group">
+			         <label for="cat" class="col-lg-2 control-label">Category</label>
+			         <div class="col-lg-10">
+			           {{cat|safe}}
+			         </div>
+			       </div>
+				   
+
+				   
+			       {{themes|safe}}
+			    
+			       <div class="form-group">
+			         <div class="col-lg-10 col-lg-offset-2">
+						<input type="hidden" name="qid" value="{{qid}}"/>
+			           <button type="submit" class="btn btn-primary">Update</button>
+			         </div>
+			       </div>
+			   </fieldset>
+			   </form>
+			 
+			 </div>
+           
+           </div>
+		 {% else %}
+		 <h1>Error</h1>
+		 <p>You are not allow to view this page</p>
+		 {% endif %}
+		
+		   
+         </div>
+
+
+{% endblock %}

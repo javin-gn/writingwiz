@@ -1,0 +1,152 @@
+﻿{% extends "base.html" %}
+
+{% block title %}
+	<title>A&#42; Composition - Add Question</title>
+{% endblock %}
+
+{% block statics %}
+<script type="text/javascript" charset="utf-8">
+	$(document).ready(function() {
+		var pret;
+		var prec;
+		
+			if($('#cat option').size()==1){
+				
+			   $('#c').html('<input type="text" class="form-control" name="cat"/>')
+			}else{
+			   bindcat();
+			}
+		
+	
+		
+		function bindcat(){
+			
+			$('#cat').bind('change', function() {
+				if(this.value=="Others"){
+					
+					prec = $('#c').html();
+				    $('#c').html('<input type="text" class="form-control" name="cat"/> <a id="cancelc" href="#">Cancel</a>');
+					if(document.querySelector("#sittem") != null){
+					
+					   $('#sittem').html('<label for="cat" class="col-lg-2 control-label">Template</label><div class="col-lg-10" id="sittem"><textarea name="tem" class="form-control" cols="90" rows="20"></textarea></div>');
+					   $('#havetem').val("havetem");
+					   
+					}
+					
+					$('#cancelc').bind('click', function() {
+					  if(document.querySelector("#sittem") != null){
+						
+						 $('#sittem').html("");
+						 $('#havetem').val("");
+				      } 
+					  $('#c').html(prec);
+					  bindcat();
+					});
+
+				}
+ 			});
+			
+		}
+	
+		
+		
+	} );
+</script>
+
+{% endblock %}
+
+{% block contents %}
+
+    <div class="container">
+         <div class="page-header" id="banner">
+	 
+           <div class="row">
+             <div class="col-lg-12">
+			 {% if superuser %}
+			  <h1>Add Question</h1>
+	
+	             {{content|safe}}			
+		
+			     {% if errors %}
+				 <div class="alert alert-dismissable alert-danger">
+				   <button type="button" class="close" data-dismiss="alert">×</button>
+		           <ul>
+		               {% for error in errors %}
+		               <li>{{ error }}</li>
+		               {% endfor %}
+		           </ul>
+				 </div>
+			     {% endif %}
+            
+			     <form enctype="multipart/form-data" class="form-horizontal" style="float:left;" action="/insert_question/" method="post">
+				   {% csrf_token %}
+			     <fieldset>
+			       <div class="form-group">
+			         <label for="question" class="col-lg-2 control-label">Question</label>
+			         <div class="col-lg-10">
+						 {% if question %}
+						 <textarea name="question" class="form-control" cols="90" rows="3">{{question}}</textarea>
+						 {% else %}
+						  <textarea name="question" class="form-control" cols="90" rows="3">Type your question here</textarea>
+						 {% endif %}
+			         </div>
+			       </div>
+			       <div class="form-group">
+			         <label for="picture" class="col-lg-2 control-label">Picture</label>
+			         <div class="col-lg-10">
+						<input name="pic" class="form-control" type="file"/>
+			         </div>
+			       </div>
+			       <div class="form-group">
+			         <label for="type" class="col-lg-2 control-label">Type</label>
+			         <div class="col-lg-10">
+			           {{type|safe}}
+			         </div>
+			       </div>
+				   
+			       <div class="form-group">
+			         <label for="cat" class="col-lg-2 control-label">Category</label>
+			         <div class="col-lg-10">
+			           {{cat|safe}}
+			         </div>
+			       </div>
+				   
+				   {{sit|safe}}
+				    
+			       {{themes|safe}}
+			    
+				   
+			       <div class="form-group">
+			         <label for="answer" class="col-lg-2 control-label">Answer</label>
+			         <div class="col-lg-10">
+						 {% if answer %}
+						 <textarea name="answer" class="form-control" cols="90" rows="20">{{answer}}</textarea>
+						 {% else %}
+						 <textarea name="answer" class="form-control" cols="90" rows="20">Type your answer here</textarea>
+						 {%endif%}
+			         </div>
+			       </div>
+			       <input type="hidden" name="havetem" id = "havetem" value=""/>
+			       <div class="form-group">
+			         <div class="col-lg-10 col-lg-offset-2">
+						
+			           <button type="submit" class="btn btn-primary">Add</button>
+			         </div>
+			       </div>
+			     </fieldset>
+			   </form>
+			 
+		
+			 </div>
+           
+           </div>
+		 {% else %}
+		 <h1>Error</h1>
+		 <p>You are not allow to view this page</p>
+		 {% endif %}
+		
+		   
+         </div>
+
+
+{% endblock %}

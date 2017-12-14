@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    {% block title %}{% endblock %}
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<link href="/static/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+	<link href="/static/css/style.css" rel="stylesheet" type="text/css" />
+    <script src="/static/scripts/jquery-1.10.2.min.js"></script>
+	<script src="/static/scripts/bootstrap.min.js" type="text/javascript"></script>
+	<script type="text/javascript">
+	$('#q').on("keypress", function(e) {
+	        if (e.keyCode == 13) {
+	            $('#search').submit();
+	            return false; // prevent the button click from happening
+	        }
+	});
+	</script>
+    {% block statics %}{% endblock %}
+  </head>
+  <body>
+	<div class="navbar navbar-default navbar-fixed-top">
+	  <div class="container">
+	    <div class="navbar-header">
+	      <a href="/" class="navbar-brand"><img src="/static/images/logo.png"> Composition</a>
+	      <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar-main">
+	        <span class="icon-bar"></span>
+	        <span class="icon-bar"></span>
+	        <span class="icon-bar"></span>
+	      </button>
+	    </div>
+	    <div class="navbar-collapse collapse" id="navbar-main">
+	      <ul class="nav navbar-nav">
+  		   <li class="dropdown">
+  	         <a href="#" class="dropdown-toggle" data-toggle="dropdown">Browse <b class="caret"></b></a>
+  	         <ul class="dropdown-menu">
+     	         <li><a href="/continuous">Continuous</a></li>
+     	         <li><a href="/situational">Situational</a></li>
+  	         </ul>
+  			</li>
+   		   
+		   <li class="dropdown">
+   	         <a href="#" class="dropdown-toggle" data-toggle="dropdown">Help <b class="caret"></b></a>
+   	         <ul class="dropdown-menu">
+      	         <li><a href="/videolist/">Learning Videos</a></li>
+				 <li><a href="/vp/">Vivid Vocabulary Listing</a></li>
+				 <li><a href="/guides/">Step-by-step guides</a></li>
+   	         </ul>
+   			</li>
+  	     	
+		   {% if superuser or user.is_superuser %}
+   		   <li class="dropdown">
+   	         <a href="#" class="dropdown-toggle" data-toggle="dropdown">Admin <b class="caret"></b></a>
+   	         <ul class="dropdown-menu">
+ 				 <li class="dropdown-header">Add Question</li>
+ 				 <li><a href="/add_question/?type=Continuous">Continuous</a></li>
+     	         <li><a href="/add_question/?type=situational">Situational</a></li>
+ 				 <li class="divider"></li>
+ 				 <li class="dropdown-header">Edit Question/Answer</li>
+ 				 <li><a href="/continuous">Continuous</a></li>
+     	         <li><a href="/situational">Situational</a></li>
+  				 <li class="dropdown-header">Themes</li>
+				 <li><a href="/themes">Themes</a></li>
+      	         <li><a href="/theme">Create Theme</a></li>
+  				 <li class="dropdown-header">Vocabulary & Phrases</li>
+				 <li><a href="/vplist">Vocabulary & Phrases</a></li>
+      	         <li><a href="/vpPage">Create Vocabulary/Phrase</a></li>
+  				 <!--
+				 <li class="dropdown-header">Packages</li>
+      	         <li><a href="/downloadPackages">Download Packages</a></li>
+				 <li class="dropdown-header">Templates</li>
+      	         <li><a href="/rebuildTemplates">Rebuild Templates</a></li>
+				 -->
+			     <li class="dropdown-header">Videos</li>
+				 <li><a href="/videolist">List of Videos</a></li>
+	      	     <li><a href="/createVideoPage">Create Video</a></li>
+	
+   	         </ul>
+   			</li>
+		  {% endif %}
+	      </ul>
+	      <div class="col-sm-3 col-md-3 pull-left">
+	             <form class="navbar-form" role="search" id="search" type="get" action="/search/">
+	                 <div class="input-group">
+	                     <input type="text" class="form-control" placeholder="Search" id="q" name="q" value="{{query}}">
+	                     <div class="input-group-btn">
+	                         <button class="btn btn-default" type="submit"><i class="glyphicon glyphicon-search"></i></button>
+	                     </div>
+	                 </div>
+	             </form>
+	         </div>
+	      <!--
+		  <form class="navbar-form navbar-left" id="search" type="get" action="/search/">
+	        <input type="text" class="form-control col-lg-8" placeholder="Search" id="q" name="q" value="{{query}}">
+	      </form>
+	      -->
+	      <ul class="nav navbar-nav navbar-right">
+			  {% if user %}
+			  <li><a href="/logout"> {{ user }} [Logout]</a></li>
+			  <li></li>
+			  {% else %}
+	            <li><a href="/login_page">Login</a></li>
+	            <li><a href="/register_page">Register</a></li>
+			  {% endif %}
+	      </ul>
+
+	    </div>
+	  </div>
+	</div>
+    {% block contents %}{% endblock %}
+    <footer>
+      <div class="row">
+        <div class="col-lg-12">
+          <p>&copy; Copyright 2014 <a href="/" rel="nofollow">A&#42; Composition</a>. An FYP Project from <a href="http://sce.ntu.edu.sg" target="_blank">School Of Computer Engineering</a>, <a href="http://ntu.edu.sg" target="_blank">Nanyang Technological University</a>, Singapore </p>
+
+        </div>
+      </div>
+    </footer>
+      
+    </div>
+
+
+  </body>
+</html>

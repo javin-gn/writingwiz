@@ -1,0 +1,39 @@
+﻿{% extends "base.html" %}
+
+{% block title %}
+	<title>A&#42; Composition - Delete Confirmation</title>
+{% endblock %}
+
+{% block statics %}
+
+{% endblock %}
+
+{% block contents %}
+    <div class="container">
+         <div class="page-header" id="banner">
+	 
+           <div class="row">
+           <div class="col-lg-6">
+   		   <h1>Delete Confirmation</h1>
+		     <form class="form-horizontal" style="float:left;" action="{{deleteURL|safe}}" method="post">
+			  {% csrf_token %}
+		     <fieldset>
+				 
+		       <div class="form-group">
+		         <div class="col-lg-12 col-lg-offset">
+		           <button type="submit" class="btn btn-primary">Confirm Delete?</button>
+			       <button type="button" onclick="window.location='{{prevURL}}'" class="btn btn-default">Back</button> 
+		         </div>
+		       </div>
+	        
+		     </fieldset>
+		   </form>
+
+	 </div>
+	 </div>
+   
+   </div>			   
+
+
+
+{% endblock %}

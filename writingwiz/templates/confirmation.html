@@ -1,0 +1,50 @@
+﻿{% extends "base.html" %}
+
+{% block title %}
+	<title>A&#42; Composition - Confirmation</title>
+{% endblock %}
+
+{% block statics %}
+
+
+{% endblock %}
+
+{% block contents %}
+    <div class="container">
+         <div class="page-header" id="banner">
+	 
+           <div class="row">
+           <div class="col-lg-6">
+				
+			 {% if con %}
+	
+			  <h1>Verify Account</h1>
+	
+	             {{content|safe}}			
+		
+				<form action="/resendverifyAccount/" class="form-horizontal" method="post">
+				 {% csrf_token %}
+			     <fieldset>
+			       <div class="form-group">
+			         <div class="col-lg-10 col-lg-offset">
+					   <input type="hidden" class="form-control" name="code" id="code" value="{{code}}" />
+					   <input type="hidden" class="form-control" name="email" id="code" value="{{email}}" />
+					   <input type="hidden" class="form-control" name="user" id="code" value="{{user}}" />
+			           <button type="submit" class="btn btn-primary">Resend Notification</button>
+			         </div>
+			       </div>
+			     </fieldset>
+			   </form>
+		
+		 {% else %}
+		 <h1>404 Error</h1>
+		 <p>You have access a page that doesnt exists</p>
+		 {% endif %}
+	 </div>
+	 </div>
+   
+   </div>			   
+
+
+
+{% endblock %}

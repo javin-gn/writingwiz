@@ -1,0 +1,106 @@
+﻿{% extends "base.html" %}
+
+{% block title %}
+	<title>A&#42; Composition - Browse</title>
+{% endblock %}
+
+{% block statics %}
+    <style type="text/css">
+	
+	#loadMore {
+	    color:green;
+	    cursor:pointer;
+	}
+	#loadMore:hover {
+	    color:black;
+	}
+	</style>
+
+<script>
+
+
+ $(function() {
+   $('#accordion').collapse();
+ 
+
+ });
+ 
+
+ 
+
+ 
+ 
+ $(document).ready(function () {
+	 
+	 $('[data-load-remote]').on('click',function(e) {
+	     e.preventDefault();
+	     var $this = $(this);
+	     var remote = $this.data('load-remote');
+	     if(remote) {
+	         $($this.data('remote-target')).load(remote);
+	     }
+	 });
+	 
+     size_li = $("#comments li").size();
+	 x=3;
+     $('#comments li:lt('+x+')').hide();
+     $('#loadMore').click(function () {
+         x= (x+5 <= size_li) ? x+5 : size_li;
+         $('#comments li:lt('+x+')').show();
+		 
+     });
+	 
+	 $('#comment').on("keyup", enable);
+
+	 function enable(){
+	 	if($('#comment').val().length > 0) {
+	 	     $('#submit').prop("disabled", false);
+		} else {
+		     $('#submit').prop("disabled", true);
+		} 
+	 }
+	 
+ });
+ 
+ 
+
+</script>
+
+
+{% endblock %}
+
+{% block contents %}
+    <div class="container">
+
+      <div class="page-header" id="banner">
+        <div class="row">
+          <div class="col-lg-8">
+	
+            {{ content|safe }}
+          </div>
+
+      </div>
+	  
+<div class="modal" id="myModal">
+<div class="modal-dialog">
+<div class="modal-content">
+<div class="modal-header">
+<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+&times;</button>
+<h4 class="modal-title">Dictionary</h4>
+</div>
+<div class="modal-body">
+Load Data...
+</div>
+<div class="modal-footer">
+<a href="#" class="btn btn-default" data-dismiss="modal">Close</a>
+</div>
+</div><!-- /.modal-content -->
+</div><!-- /.modal-dialog -->
+</div>
+	  
+	  
+
+
+
+{% endblock %}

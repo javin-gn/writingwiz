@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}
+	<title>A&#42; Composition - Create/Edit Video</title>
+{% endblock %}
+
+{% block statics %}
+
+{% endblock %}
+
+{% block contents %}
+    <div class="container">
+         <div class="page-header" id="banner">
+	 
+           <div class="row">
+             <div class="col-lg-12">
+			 {% if superuser %}
+			  <h1>Create/Edit Video</h1>
+			  
+			 {% if errors %}
+			 <div class="alert alert-dismissable alert-danger">
+			   <button type="button" class="close" data-dismiss="alert">×</button>
+	           <ul>
+	               {% for error in errors %}
+	               <li>{{ error }}</li>
+	               {% endfor %}
+	           </ul>
+			 </div>
+			
+			 {% else %}  
+			   {{success|safe}}
+		     {% endif %}
+			
+				 {{content|safe}}
+			 
+			     <form class="form-horizontal" style="float:left;" action="{{cu}}" method="post">
+				  {% csrf_token %}
+			     <fieldset>
+					 
+  			       <div class="form-group">
+  			         <label for="vp" class="col-lg-1 control-label">Title</label>
+  			         <div class="col-lg-12">
+  						 <input type="text" name="title" class="form-control" value="{{title}}"/>
+						 
+  			         </div>
+  			       </div>
+				   
+  			       <div class="form-group">
+  			         <label for="vp" class="col-lg-1 control-label">URL</label>
+  			         <div class="col-lg-12">
+  						 <input type="text" name="url" class="form-control" value="{{url}}"/>
+						 <input type="hidden" name="id" class="form-control" value="{{id}}"/>
+						 
+  			         </div>
+  			       </div>
+				   
+  			
+  			       <div class="form-group">
+  			         <div class="col-lg-12 col-lg-offset">
+  			           <button type="submit" class="btn btn-primary">Submit</button>
+    			       <button type="button" onclick="window.location='/videolist/'" class="btn btn-default">Back</button> 
+  			         </div>
+  			       </div>
+		        
+			     </fieldset>
+			   </form>
+			 
+		
+			 </div>
+           
+           </div>
+		 {% else %}
+		 <h1>Error</h1>
+		 <p>You are not allow to view this page</p>
+		 {% endif %}
+	
+         </div>
+
+
+{% endblock %}

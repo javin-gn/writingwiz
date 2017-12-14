@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}
+	<title>A&#42; Composition - Themes</title>
+{% endblock %}
+
+{% block statics %}
+<link href="/static/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" language="javascript" src="/static/scripts/jquery.dataTables.min.js"></script>
+<script type="text/javascript" language="javascript" src="/static/scripts/jquery-DT-pagination.js"></script>
+<script type="text/javascript">
+         /* Table initialisation */
+	$(document).ready(function() {
+		$('#themetable').dataTable( {
+			"bSort": true,       // Disable sorting
+			'aoColumnDefs': [{
+			        'bSortable': false,
+			        'aTargets': [ 1,2 ] /* 1st one, start by the right */
+			    }],
+			"oSearch": {"sSearch": ""},
+			"iDisplayLength": 10,   //records per page
+			"bLengthChange": false, //used to hide the property
+			"sPaginationType": "bootstrap"
+	         } );
+        } );
+</script>
+
+
+{% endblock %}
+
+{% block contents %}
+    <div class="container">
+         <div class="page-header" id="banner">
+	 
+           <div class="row">
+             <div class="col-lg-12">
+			 {% if superuser %}
+			  <h1>Themes</h1>
+			 	 
+				 {{content|safe}}
+            
+			     <form class="form-horizontal" style="float:left;" action="" method="post">
+				   {% csrf_token %}
+			     <fieldset>
+			
+  			       <div class="form-group">
+  			         <div class="col-lg-10 col-lg-offset">
+  			           <button type="button" onclick="window.location='/theme/'" class="btn btn-primary">Create a new Theme</button>
+  			         </div>
+  			       </div>
+		
+			   </fieldset>
+			   </form>
+			 
+		
+			 </div>
+           
+           </div>
+		 {% else %}
+		 <h1>Error</h1>
+		 <p>You are not allow to view this page</p>
+		 {% endif %}
+		
+		   
+         </div>
+
+
+{% endblock %}

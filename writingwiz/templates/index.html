@@ -1,0 +1,95 @@
+﻿{% extends "base.html" %}
+
+{% block title %}
+	<title>A&#42; Composition - Read, Learn and Write</title>
+{% endblock %}
+
+{% block statics %}
+	<script type="text/javascript" src="/static/scripts/jquery.nivo.slider.js"></script>
+	<script type="text/javascript">
+	    $(window).load(function () {
+	        $('#featured').nivoSlider({
+	            directionNav: false,
+	            pauseOnHover: false,
+	            manualAdvance: false
+	        });
+	    });
+	</script>
+
+{% endblock %}
+
+
+{% block contents %}
+	
+	<div class="container">
+	       <div class="page-header" id="banner">
+	  
+	        
+	           
+		                 <div class="slider-wrapper theme-bar">
+		                 <div id="featured" class="nivoSlider">
+		                 <img src="{{ STATIC_URL }}images/read.jpg" alt="" />
+		                 <img src="{{ STATIC_URL }}images/learn.jpg" alt="" data-transition="slideInLeft" />
+		                 <img src="{{ STATIC_URL }}images/write.jpg" alt=""/>
+		                 </div>
+		                 </div>
+	        
+	        
+	         
+	         <div class="row">
+	           <div class="col-lg-12">
+	             <h2>Features</h2>
+	           </div>
+	         </div>
+	         <div class="row">
+	           <div class="col-lg-4">
+	             <div class="bs-example">
+				   <div class="panel panel-default">
+				     <div class="panel-heading">PSLE Standard Questions</div>
+				     <div class="panel-body">
+				       <ul>
+					   <li>Tons of PSLE Standard questions mainly Continuous and Situational Writing</li>
+					   <li>Model Compositions from Assessment Books and User Submitted Compositions!</li>
+					   <li>Contains Commonly tested themes!</li>
+				       </ul>
+					   <center><a href="/register_page/" target="_parent"><button type="button" class="btn btn-primary">Sign up Now!</button></a></center>
+				     </div>
+				   </div>
+  	               
+	             </div>
+	           </div>
+  	           <div class="col-lg-4">
+	             <div class="bs-example">
+					 <div class="panel panel-default">
+					   <div class="panel-heading">Extensive Vocabulary Listings</div>
+					   <div class="panel-body">
+						 <ul>
+							 <li>Tons of Vocabularyto learn from</li>
+							 <li>Contains useful words to describe feelings, people, places and etc...</li>
+							 <li>Links to find the meanings of words and their usage</li>
+						 </ul>
+						 <center><a href="/register_page/" target="_parent"><button type="button" class="btn btn-primary">Sign up Now!</button></a></center>
+					   </div>
+					 </div>
+	             </div>
+	           </div>
+	           <div class="col-lg-4">
+	             <div class="bs-example">
+				  <div class="panel panel-default">
+				    <div class="panel-heading">Step-by-Step Guide</div>
+				    <div class="panel-body">
+					 <ul>
+						 <li>Step by step guide to kick start from a good introduction to a memorable conclusion </li>
+						 <li>Contains different creative plots to learn from</li>
+						 <li>Submit your own creative solution and let other users review</li>
+					 </ul>
+					 <center><a href="/register_page/" target="_parent"><button type="button" class="btn btn-primary">Sign up Now!</button></a></center>
+				    </div>
+				  </div>
+	              
+	             </div>
+	           </div>
+	         </div>
+		 </div>
+
+{% endblock %}

@@ -1,0 +1,239 @@
+﻿{% extends "base.html" %}
+
+{% block title %}
+	<title>A&#42; Composition - Excercises</title>
+{% endblock %}
+
+{% block statics %}
+	<script>
+ $(document).ready(function () {
+	 
+	 $('[data-load-remote]').on('click',function(e) {
+	     e.preventDefault();
+	     var $this = $(this);
+	     var remote = $this.data('load-remote');
+	     if(remote) {
+	         $($this.data('remote-target')).load(remote);
+	     }
+	 });
+	});
+</script>
+
+{% endblock %}
+
+{% block contents %}
+    <div class="container">
+
+      <div class="page-header" id="banner">
+        <div class="row">
+          <div class="col-lg-6">
+			  
+ 	      {% if errors %}
+ 		  <div class="alert alert-dismissable alert-danger">
+ 		  <button type="button" class="close" data-dismiss="alert">×</button>
+            <ul>
+                {% for error in errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+ 		 </div>
+ 	     {% endif %}
+		 
+  		 {{ content|safe }}
+			
+		 
+		 {% if con %}
+	 	     <form class="form-horizontal" action="/add_answer/" method="POST">
+	 	     {% csrf_token %}
+	 	     <fieldset>
+		   
+	 	       <div class="form-group">
+	 	         <label for="answer" class="col-lg-1 control-label">Answer: </label>
+	 	        <div class="col-lg-12">
+					
+	 				 {% if continuous %}
+					   {% if answer %}
+					   <textarea name="answer" class="form-control" cols="90" rows="20">{{answer}}</textarea>
+					   {%else%}
+					   <textarea name="answer" class="form-control" cols="90" rows="20">Type your answer here</textarea>
+					   {% endif %}
+	 				 
+					 {%else%}
+					  <textarea name="answer" class="form-control" cols="90" rows="20">{{template}}</textarea>
+					 {% endif %}
+					 <input type ="hidden" name="qid" value="{{qid}}"/>
+	 			 </div>
+	 	       </div>
+	 	       <div class="form-group">
+	 	         <div class="col-lg-10 col-lg-offset">
+	 	           <button type="submit" class="btn btn-primary">Submit</button>
+	 	         </div>
+	 	       </div>
+	 	     </fieldset>
+		 
+	 	   </form>
+          </div>
+          <div class="col-lg-6" style="padding: 15px 15px 0 15px;">
+            <div class="well sponsor">
+				<h2>Information</h2> 
+				Category: {{ cat|safe}}
+				Type: {{ type|safe}}
+				{% if theme %}
+				  Theme: {{ theme|safe}}
+				{% endif %}
+            </div>
+			
+            <div id="vp" class="well sponsor">
+            <h2>Vivid Vocabulary:</h2> 
+			<blockquote>
+			  <p>"It's only words, and words are all I have to take your heart away,"</p>
+			  <small>goes an old song</small>
+			</blockquote>
+			
+			<p>A good composition made up of words. In order for your composition to capture the reader's heart, tap into your vocabulary bank to come up with a variety of words and phrases to spice up your story. However, don't just focus on overloading your story with big, bombastic words such that your writing comes across as fake and rehearse.</p>
+			
+			<p>It is impossible to come up with an exhaustive list of ALL the good words and phrases you can use in your compositions, this Application provides numerous alternatives for some words. Below are some Vivid Vocabulary that can be used for this question:</p>
+			
+	
+			<p>{{vp|safe}}</p>
+	
+            <!--<p>Click <a href="javascript:window.open('/vp/?theme={{th}}', '_blank', 'toolbar=no, scrollbars=no, resizable=no, width=400, height=400');" target="_blank">here</a> for more Useful Vocabularies/Phrases to use.</p>-->
+			
+			</div>
+			
+			{% if continuous %}
+            <div class="well sponsor">
+				<h2>Guide</h2>
+				<p>3 Easy Steps to write a good Continuous composition</p>
+			
+			    <h2>Step 1:</h2>
+				<h3>Writing Captivating Introductions</h3>
+				<p>The introductory paragraph is important as it is the first impression you are giving your reader (and markers in an examination). As the saying goes, first impressions last. The introduction should lure the reader into the rest of the story. As such, it must capture the readers' interest. Your teacher will have to read and grade many compositions of the same title or subject. As such, an eye-catching introduction will make your composition stand out from the rest and whet his or her appetite for what is yet to come.</p>
+				<p>Click <a href="#intro" data-toggle="modal" data-load-remote="/introduction/?theme={{th}}" data-remote-target="#intro .modal-body">here</a> to see how you can write a captivating introduction for this question.</p>
+			
+			    <h2>Step 2:</h2>
+				<h3>Fomulating Interesting and Varied plots</h3>	
+				<p>After the introductory paragraph, the next few paragraphs are where the real action of your story lies. It is the plot, or story line, where the reader is taken on a journey through the ups and downs of your characters' experiences.</p>
+				<p>A narrative composition consists of a main character and other sub-characters who face a problem of some sort. It is the writer's job to describe the problem faced, followed by a series of events as the characters try to resolve the problem until it is finally solved.</p>
+				
+				<p>For a given Composition question, there are usually many different plots a writer can think of. Use your imagination and let your creative juices flow. Just make sure that your plot makes sense and that given the limited length of your composition and the limited amount of time you have to write your story, avoid a plot that is too long and complicated that leaves the reader confused.</p>	
+				<p>Click <a href="#mb" data-toggle="modal" data-load-remote="/mb/?theme={{th}}" data-remote-target="#mb .modal-body">here</a> to see how you can fomulate interesting and varied plots for this question.
+			
+				
+				<h2>Step 3:</h2>
+			    <h3>Writing Memorable Conclusion</h3>
+				<p>You have a great introduction, a terrific plot, a wide range of vocabulary, all elements of a good composition, but wait, make sure you leave a lasting impression with a well-written conclusion.</p>
+				
+				<p>The conclusion is your last chance to impress your readers or markers. A good conclusion provides a fitting round-up to your composition; it makes the whole story complete. Plan your composition, manage your time well, don't end up with a scenario where you don't have time to finish your story and are forced to end abruptly.
+				<p>Click <a href="#con" data-toggle="modal" data-load-remote="/conclusion/?theme={{th}}" data-remote-target="#con .modal-body">here</a> to see how you can write memorable conclusions for this question.</p>
+		
+            </div>
+			
+			{% else %}
+			
+			<div class="well sponsor">
+				<h2>Guide</h2>
+				<h3>Writing a good Stituational composition</h3>
+				
+				<p>Students are given an informatonal piece (for example, an advertisment, a notice, a receipe or a schedule) and are expected to make use of the given informatuon to write an email, a letter, a postcard etc to convey the information to someone else. No specific format is required and students will do fine by just following the instruction given with the question.</p>
+					
+				<p>Since the student is given guidelines on what to write, coupled with the fact that all information is already provided, the situational writing segement is a fairly easy one. Just make sure to use all the points given and include ALL relevant information. Do not waste time by adding your own irrelevant information that is not provided. Also pay attention to your spelling, punctuation and grammar.</p>
+				
+			
+				{% if points %}
+				<p>Following the given model compositions template, write using Useful phrases and Vocabularies provided following the points below:</p>
+				 {{points|safe}}
+				<p>Mark the point once you have done it.</p>
+				
+				{% else %}
+				<p>Following the given model compositions template, write using Useful phrases and Vocabularies provided following the points stated in the question!</p>
+				
+				{% endif %}
+				
+				
+		
+            </div>
+			 
+			{% endif %}
+			
+          </div>
+        </div>
+		{% endif %}
+      </div>
+	  
+	  <div class="modal" id="dict">
+	  <div class="modal-dialog">
+	  <div class="modal-content">
+	  <div class="modal-header">
+	  <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+	  &times;</button>
+	  <h4 class="modal-title">Dictionary</h4>
+	  </div>
+	  <div class="modal-body">
+	  Load Data...
+	  </div>
+	  <div class="modal-footer">
+	  <a href="#" class="btn btn-default" data-dismiss="modal">Close</a>
+	  </div>
+	  </div><!-- /.modal-content -->
+	  </div><!-- /.modal-dialog -->
+	  </div>
+	  
+	  <div class="modal" id="intro">
+	  <div class="modal-dialog">
+	  <div class="modal-content">
+	  <div class="modal-header">
+	  <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+	  &times;</button>
+	  <h4 class="modal-title">Writing Captivating Introductions</h4>
+	  </div>
+	  <div class="modal-body">
+	  Load Data...
+	  </div>
+	  <div class="modal-footer">
+	  <a href="#" class="btn btn-default" data-dismiss="modal">Close</a>
+	  </div>
+	  </div><!-- /.modal-content -->
+	  </div><!-- /.modal-dialog -->
+	  </div>
+	  
+	  <div class="modal" id="mb">
+	  <div class="modal-dialog">
+	  <div class="modal-content">
+	  <div class="modal-header">
+	  <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+	  &times;</button>
+	  <h4 class="modal-title">Fomulating Interesting and Varied plots</h4>
+	  </div>
+	  <div class="modal-body">
+	  Load Data...
+	  </div>
+	  <div class="modal-footer">
+	  <a href="#" class="btn btn-default" data-dismiss="modal">Close</a>
+	  </div>
+	  </div><!-- /.modal-content -->
+	  </div><!-- /.modal-dialog -->
+	  </div>
+	  
+	  <div class="modal" id="con">
+	  <div class="modal-dialog">
+	  <div class="modal-content">
+	  <div class="modal-header">
+	  <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+	  &times;</button>
+	  <h4 class="modal-title">Writing Memorable Conclusion</h4>
+	  </div>
+	  <div class="modal-body">
+	  Load Data...
+	  </div>
+	  <div class="modal-footer">
+	  <a href="#" class="btn btn-default" data-dismiss="modal">Close</a>
+	  </div>
+	  </div><!-- /.modal-content -->
+	  </div><!-- /.modal-dialog -->
+	  </div>
+	  
+
+
+
+{% endblock %}
