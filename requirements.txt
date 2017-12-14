@@ -6,5 +6,5 @@ whitenoise==3.3.1
 django-haystack
 whoosh
 nltk
-numpy==1.5.1
+numpy==1.13.3 
 wordnik
