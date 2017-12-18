@@ -83,10 +83,18 @@ WSGI_APPLICATION = 'wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
-from . import database
+
 
 DATABASES = {
-    'default': database.config()
+    'default': {
+            'ENGINE': 'django.db.backends.mysql,
+            'NAME': os.getenv('DATABASE_USER'),
+            'USER': os.getenv('DATABASE_USER'),
+            'PASSWORD': os.getenv('DATABASE_PASSWORD'),
+            'HOST': 'MYSQL_SERVICE_HOST',
+            'PORT': 'MYSQL_SERVICE_PORT',
+        
+            }
 }
 
 
