@@ -139,11 +139,13 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
-# Served via WhiteNoise directly from the WSGI app - no separate static host needed.
+# Vercel auto-runs collectstatic and serves STATIC_ROOT from its CDN in production
+# (supported storages: StaticFilesStorage, ManifestStaticFilesStorage, WhiteNoise's
+# CompressedManifestStaticFilesStorage). WhiteNoise middleware below only serves
+# static files when running locally (e.g. `vercel dev` or `runserver`).
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Email settings
 EMAIL_USE_TLS = True
