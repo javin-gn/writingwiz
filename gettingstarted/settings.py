@@ -17,23 +17,24 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get(
-    'SECRET_KEY',
-    'CHANGE_ME!!!! (used only when the SECRET_KEY environment variable is not set)',
-)
+SECRET_KEY = os.environ.get('SECRET_KEY') or 'CHANGE_ME!!!! (used only when the SECRET_KEY environment variable is not set or empty)'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = [h for h in os.environ.get('ALLOWED_HOSTS', '').split(',') if h]
 
-# Vercel injects VERCEL_URL (host only, no scheme) for every deployment.
+# Vercel deployment/preview URLs and any custom *.vercel.app alias (e.g. a
+# production alias like "myproject.vercel.app") always match this suffix.
+ALLOWED_HOSTS.append('.vercel.app')
+
+# Vercel injects VERCEL_URL (this deployment's own host, no scheme) for every build.
 VERCEL_URL = os.environ.get('VERCEL_URL')
 if VERCEL_URL:
     ALLOWED_HOSTS.append(VERCEL_URL)
 
-if DEBUG and not ALLOWED_HOSTS:
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+if DEBUG:
+    ALLOWED_HOSTS += ['localhost', '127.0.0.1']
 
 CSRF_TRUSTED_ORIGINS = [o for o in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if o]
 if VERCEL_URL:
