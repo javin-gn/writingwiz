@@ -1,0 +1,7 @@
+{
+  "installCommand": "pip install -r requirements.txt",
+  "buildCommand": "python manage.py collectstatic --noinput",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api/index" }
+  ]
+}

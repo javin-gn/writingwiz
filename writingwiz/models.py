@@ -1,7 +1,43 @@
 from django.db import models
 
-# Create your models here.
+from django.contrib.auth.models import User
+from django.db.models.signals import post_save
 
-class PageView(models.Model):
-    hostname = models.CharField(max_length=32)
-    timestamp = models.DateTimeField(auto_now_add=True)
+# Create your models here.
+class Greeting(models.Model):
+    when = models.DateTimeField('date created', auto_now_add=True)
+
+class Questions(models.Model):
+    questionid = models.IntegerField(db_column='questionID', primary_key=True) # Field name made lowercase.
+    question = models.TextField()
+    questionCategory = models.CharField(db_column='questionCategory', max_length=255) # Field name made lowercase.
+    questionType = models.CharField(db_column='questionType', max_length=255) # Field name made lowercase.
+    class Meta:
+        db_table = 'questions'
+
+class ModelAns(models.Model):
+    ansid = models.IntegerField(db_column='ansID', primary_key=True) # Field name made lowercase.
+    questionid = models.ForeignKey(Questions, on_delete=models.CASCADE)
+    ans = models.TextField()
+    class Meta:
+        db_table = 'model_ans'
+
+class Pictorial(models.Model):
+    picid = models.IntegerField(db_column='picID') # Field name made lowercase.
+    questionid = models.ForeignKey(Questions, on_delete=models.CASCADE)
+    url = models.CharField(max_length=255)
+    class Meta:
+        db_table = 'pictorial'
+
+class UserProfile(models.Model):
+    #required by the auth model
+    user = models.OneToOneField(User, on_delete=models.CASCADE) 
+    confirmation_code = models.CharField(max_length=1000, null=False, blank=False)
+    def __str__(self):  
+              return "%s's profile" % self.user
+
+def create_user_profile(sender, instance, created, **kwargs):  
+    if created:  
+       profile, created = UserProfile.objects.get_or_create(user=instance)  
+
+post_save.connect(create_user_profile, sender=User) 

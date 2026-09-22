@@ -23,7 +23,7 @@
 	<div class="navbar navbar-default navbar-fixed-top">
 	  <div class="container">
 	    <div class="navbar-header">
-	      <a href="/" class="navbar-brand"><img src="/static/images/logo.png"> Composition</a>
+	      <a href="/" class="navbar-brand"><img src="/static/images/logo.png"> WritingWiz</a>
 	      <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar-main">
 	        <span class="icon-bar"></span>
 	        <span class="icon-bar"></span>
@@ -96,12 +96,12 @@
 	      </form>
 	      -->
 	      <ul class="nav navbar-nav navbar-right">
-			  {% if user %}
+			  {% if user.is_authenticated %}
 			  <li><a href="/logout"> {{ user }} [Logout]</a></li>
 			  <li></li>
 			  {% else %}
-	            <li><a href="/login_page">Login</a></li>
-	            <li><a href="/register_page">Register</a></li>
+	            <li><a href="/login">Login</a></li>
+	            <li><a href="/register">Register</a></li>
 			  {% endif %}
 	      </ul>
 
@@ -112,7 +112,7 @@
     <footer>
       <div class="row">
         <div class="col-lg-12">
-          <p>&copy; Copyright 2014 <a href="/" rel="nofollow">A&#42; Composition</a>. An FYP Project from <a href="http://sce.ntu.edu.sg" target="_blank">School Of Computer Engineering</a>, <a href="http://ntu.edu.sg" target="_blank">Nanyang Technological University</a>, Singapore </p>
+          <p>&copy; Copyright 2014 - 2018 <a href="/" rel="nofollow">WritingWiz</a>. A Project from <a href="https://javingn.com" target="_blank">Javin Gn</a>, Singapore </p>
 
         </div>
       </div>
