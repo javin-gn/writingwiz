@@ -54,6 +54,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
     'writingwiz'
 ]
 
@@ -64,9 +69,33 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+SITE_ID = 1
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+# Google sign-in is offered alongside the existing email/password login -
+# credentials come from a Google Cloud OAuth client (see .env.example).
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP': {
+            'client_id': os.environ.get('GOOGLE_CLIENT_ID', ''),
+            'secret': os.environ.get('GOOGLE_CLIENT_SECRET', ''),
+            'key': '',
+        },
+        'SCOPE': ['profile', 'email'],
+    },
+}
+SOCIALACCOUNT_LOGIN_ON_GET = True
+SOCIALACCOUNT_STORE_TOKENS = False
+LOGIN_REDIRECT_URL = '/'
 
 ROOT_URLCONF = 'gettingstarted.urls'
 
@@ -94,11 +123,14 @@ WSGI_APPLICATION = 'gettingstarted.wsgi.application'
 # Falls back to local sqlite when DATABASE_URL isn't set (e.g. local dev).
 # On Vercel, set DATABASE_URL to a hosted Postgres instance (Neon, Supabase, etc.) -
 # the filesystem there is read-only/ephemeral so sqlite won't work in production.
+# Default CONN_MAX_AGE is 0: if DATABASE_URL points at a transaction-mode
+# connection pooler (e.g. Supabase's pgbouncer on port 6543, recommended for
+# serverless), Django shouldn't hold its own long-lived connections on top of it.
 
 DATABASES = {
     'default': dj_database_url.config(
         default=f"sqlite:///{os.path.join(BASE_DIR, 'db.sqlite3')}",
-        conn_max_age=600,
+        conn_max_age=int(os.environ.get('DATABASE_CONN_MAX_AGE', '0')),
         # Only force SSL when an actual DATABASE_URL (e.g. Postgres) is set -
         # sqlite doesn't understand sslmode and errors if it's passed.
         ssl_require=bool(os.environ.get('DATABASE_URL'))
@@ -155,5 +187,10 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'astarcompo@gmail.com')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 EMAIL_PORT = 587
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# Without real SMTP credentials there's nothing to actually send to - print
+# emails to the console instead so signup/verification can still be tested locally.
+if DEBUG and not EMAIL_HOST_PASSWORD:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 AUTH_PROFILE_MODULE = "writingwiz.UserProfile"

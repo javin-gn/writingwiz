@@ -8,20 +8,10 @@
 
 <script type="text/javascript" charset="utf-8">
 
-function loadQuestion(e){
- 
-	$("#main").children().hide();
-	$( "#question" ).show();
-	$( "#question" ).load(e);
+function loadQuestions(query, ty){
+	$( "#questions").load('/questions/?type=' + ty + '&query=' + query);
 }
 
-function getQuestions(e){
-	
-	$("#main").children().hide();
-	$("#" + e).show();
-	
-}
-	
 </script>
 {% endblock %}
 

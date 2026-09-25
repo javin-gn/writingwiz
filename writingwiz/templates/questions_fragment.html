@@ -1,0 +1,21 @@
+{% if questions %}
+<div class="list-group">
+  {% for q in questions %}
+  <div class="list-group-item">
+    <h4>{{ q.questionCategory }}</h4>
+    <p>{{ q.question|linebreaksbr }}</p>
+    {% for pic in q.pictorial_set.all %}
+      <img src="/static/pictures/{{ pic.url }}" style="max-width:100%;" alt="">
+    {% endfor %}
+    {% for ans in q.modelans_set.all %}
+      <details>
+        <summary>Model Answer</summary>
+        <p>{{ ans.ans|linebreaksbr }}</p>
+      </details>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p>No questions found.</p>
+{% endif %}

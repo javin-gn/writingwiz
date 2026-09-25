@@ -29,6 +29,33 @@ class Pictorial(models.Model):
     class Meta:
         db_table = 'pictorial'
 
+class LearningVideo(models.Model):
+    url = models.CharField(max_length=255, null=True, blank=True)
+    title = models.CharField(max_length=255, null=True, blank=True)
+    noOfViews = models.IntegerField(db_column='noOfViews', null=True, blank=True, default=0)
+    dateCreated = models.DateTimeField(db_column='dateCreated', null=True, blank=True)
+    class Meta:
+        db_table = 'learningvideos'
+
+class VpCategory(models.Model):
+    category = models.CharField(max_length=255, primary_key=True)
+    class Meta:
+        db_table = 'vpcat'
+
+class Vocabulary(models.Model):
+    vocabulary = models.CharField(max_length=255, primary_key=True)
+    category = models.CharField(max_length=255)
+    theme = models.CharField(max_length=255, blank=True)
+    class Meta:
+        db_table = 'vocabularies'
+
+class Phrase(models.Model):
+    phrase = models.CharField(max_length=255, primary_key=True)
+    category = models.CharField(max_length=255)
+    theme = models.CharField(max_length=255, blank=True)
+    class Meta:
+        db_table = 'phrases'
+
 class UserProfile(models.Model):
     #required by the auth model
     user = models.OneToOneField(User, on_delete=models.CASCADE) 
