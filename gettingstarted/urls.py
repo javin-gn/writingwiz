@@ -26,5 +26,11 @@ urlpatterns = [
     re_path(r'^videolist', writingwiz.views.videolist, name='videolist'),
     re_path(r'^vp/', writingwiz.views.vp, name='vp'),
     path('grader/', writingwiz.views.essay_grader, name='essay_grader'),
+    path('add_question/', writingwiz.views.add_question, name='add_question'),
+    path('insert_question/', writingwiz.views.insert_question, name='insert_question'),
+    path('edit_question/<int:question_id>/', writingwiz.views.edit_question, name='edit_question'),
+    path('update_question/', writingwiz.views.update_question, name='update_question'),
+    path('edit_answer/<int:ans_id>/', writingwiz.views.edit_answer_view, name='edit_answer'),
+    path('update_answer/', writingwiz.views.update_answer, name='update_answer'),
     path('admin/', admin.site.urls),
 ]

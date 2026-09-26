@@ -18,7 +18,15 @@ from django.utils.html import format_html, format_html_join
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.signals import user_logged_in
 
-from .models import Greeting, Questions, LearningVideo, Vocabulary, Phrase
+import os
+import uuid
+
+from django.conf import settings
+
+from .models import (
+	Greeting, Questions, ModelAns, Pictorial, LearningVideo, Vocabulary, Phrase,
+	_next_question_id, _next_ans_id, _next_pic_id,
+)
 from .grading import grade_essay
 
 #Keep the session keys the rest of the app reads in sync for every login path,
@@ -28,6 +36,38 @@ def _sync_session_on_login(sender, request, user, **kwargs):
 	request.session['superuser'] = user.is_superuser
 
 user_logged_in.connect(_sync_session_on_login)
+
+def _is_superuser(request):
+	return bool(request.user.is_authenticated and request.session.get('superuser'))
+
+def _session_user(request):
+	if request.user.is_authenticated:
+		return request.session.get('username', ''), request.session.get('superuser', '')
+	return '', ''
+
+QUESTION_TYPES = ['Continuous', 'Situational']
+
+def _type_select(selected=''):
+	options = format_html_join(
+		'', '<option value="{}" {}>{}</option>',
+		((t, 'selected' if t == selected else '', t) for t in QUESTION_TYPES),
+	)
+	return format_html('<select name="type" class="form-control">{}</select>', options)
+
+def _category_select(selected='', qtype=None):
+	qs = Questions.objects.all()
+	if qtype:
+		qs = qs.filter(questionType=qtype)
+	categories = qs.values_list('questionCategory', flat=True).distinct().order_by('questionCategory')
+	options = format_html_join(
+		'', '<option value="{}" {}>{}</option>',
+		((c, 'selected' if c == selected else '', c) for c in categories),
+	)
+	other_selected = 'selected' if selected and selected not in categories else ''
+	return format_html(
+		'<div id="c"><select id="cat" name="cat" class="form-control">{}<option value="Others" {}>Others (type a new category)</option></select></div>',
+		options, other_selected,
+	)
 
 # Create your views here.
 
@@ -345,5 +385,172 @@ def questions_browse(request):
 		questions = questions.filter(questionCategory=category)
 	questions = questions.order_by('questionid')
 
-	return render(request, 'questions_fragment.html', {'questions': questions})
+	return render(request, 'questions_fragment.html', {
+		'questions': questions,
+		'superuser': _is_superuser(request),
+	})
+
+def _redirect_to_browse(qtype):
+	return HttpResponseRedirect('/continuous' if qtype == 'Continuous' else '/situational')
+
+#Add Question page - superuser only
+def add_question(request):
+	usr, superuser = _session_user(request)
+	if not superuser:
+		return render(request, 'add_question.html', {'user': usr, 'superuser': superuser})
+
+	default_type = request.GET.get('type', 'Continuous')
+	if default_type.lower() == 'situational':
+		default_type = 'Situational'
+
+	return render(request, 'add_question.html', {
+		'type': _type_select(default_type),
+		'cat': _category_select(qtype=default_type),
+		'sit': '',
+		'themes': '',
+		'user': usr,
+		'superuser': superuser,
+	})
+
+#Handles the POST from add_question.html
+def insert_question(request):
+	usr, superuser = _session_user(request)
+	if not superuser or request.method != 'POST':
+		return HttpResponseRedirect('/403/')
+
+	question_text = request.POST.get('question', '').strip()
+	qtype = request.POST.get('type', '').strip()
+	category = request.POST.get('cat', '').strip()
+	answer_text = request.POST.get('answer', '').strip()
+
+	errors = []
+	if not question_text or question_text == 'Type your question here':
+		errors.append('Question text is required.')
+	if qtype not in QUESTION_TYPES:
+		errors.append('Please choose a writing type.')
+	if not category:
+		errors.append('Category is required.')
+	if not answer_text or answer_text == 'Type your answer here':
+		errors.append('Model answer is required.')
+
+	if errors:
+		return render(request, 'add_question.html', {
+			'errors': errors,
+			'question': question_text,
+			'answer': answer_text,
+			'type': _type_select(qtype),
+			'cat': _category_select(category, qtype=qtype or None),
+			'sit': '',
+			'themes': '',
+			'user': usr,
+			'superuser': superuser,
+		})
+
+	question = Questions.objects.create(
+		questionid=_next_question_id(),
+		question=question_text,
+		questionCategory=category,
+		questionType=qtype,
+	)
+	ModelAns.objects.create(ansid=_next_ans_id(), questionid=question, ans=answer_text)
+
+	pic_file = request.FILES.get('pic')
+	pic_warning = None
+	if pic_file:
+		try:
+			ext = os.path.splitext(pic_file.name)[1]
+			filename = f'{uuid.uuid4().hex}{ext}'
+			dest_dir = os.path.join(settings.BASE_DIR, 'writingwiz', 'static', 'pictures')
+			os.makedirs(dest_dir, exist_ok=True)
+			with open(os.path.join(dest_dir, filename), 'wb') as f:
+				for chunk in pic_file.chunks():
+					f.write(chunk)
+			Pictorial.objects.create(picid=_next_pic_id(), questionid=question, url=filename)
+		except OSError:
+			# Vercel's filesystem is read-only at runtime - there's nowhere to
+			# persist an uploaded file without adding external object storage.
+			# The question/answer are still saved; only the picture is skipped.
+			pic_warning = (
+				'The question and answer were saved, but the picture could not be uploaded - '
+				'this deployment has no persistent file storage configured.'
+			)
+
+	if pic_warning:
+		return render(request, 'add_question.html', {
+			'errors': [pic_warning],
+			'type': _type_select(),
+			'cat': _category_select(),
+			'sit': '',
+			'themes': '',
+			'user': usr,
+			'superuser': superuser,
+		})
+
+	return _redirect_to_browse(qtype)
+
+#Edit Question page - superuser only
+def edit_question(request, question_id):
+	usr, superuser = _session_user(request)
+	if not superuser:
+		return render(request, 'edit_question.html', {'user': usr, 'superuser': superuser})
+
+	question = get_object_or_404(Questions, pk=question_id)
+	pictures = question.pictorial_set.all()
+	picture_block = format_html_join(
+		'', '<p><img src="/static/pictures/{}" style="max-width:200px;"><br>{}</p>',
+		((p.url, p.url) for p in pictures),
+	) if pictures else format_html('<p class="text-muted">No picture uploaded for this question yet.</p>')
+
+	return render(request, 'edit_question.html', {
+		'qid': question.questionid,
+		'question': question.question,
+		'picture': picture_block,
+		'type': _type_select(question.questionType),
+		'cat': _category_select(question.questionCategory, qtype=question.questionType),
+		'themes': '',
+		'user': usr,
+		'superuser': superuser,
+	})
+
+#Handles the POST from edit_question.html
+def update_question(request):
+	usr, superuser = _session_user(request)
+	if not superuser or request.method != 'POST':
+		return HttpResponseRedirect('/403/')
+
+	question = get_object_or_404(Questions, pk=request.POST.get('qid'))
+	question.question = request.POST.get('question', '').strip()
+	question.questionType = request.POST.get('type', '').strip() or question.questionType
+	question.questionCategory = request.POST.get('cat', '').strip() or question.questionCategory
+	question.save()
+
+	return _redirect_to_browse(question.questionType)
+
+#Edit Answer page - superuser only
+def edit_answer_view(request, ans_id):
+	usr, superuser = _session_user(request)
+	if not superuser:
+		return render(request, 'edit_answer.html', {'user': usr, 'superuser': superuser})
+
+	answer = get_object_or_404(ModelAns, pk=ans_id)
+	return render(request, 'edit_answer.html', {
+		'qid': answer.questionid_id,
+		'aid': answer.ansid,
+		'answer': answer.ans,
+		'user': usr,
+		'superuser': superuser,
+	})
+
+#Handles the POST from edit_answer.html
+def update_answer(request):
+	usr, superuser = _session_user(request)
+	if not superuser or request.method != 'POST':
+		return HttpResponseRedirect('/403/')
+
+	answer = get_object_or_404(ModelAns, pk=request.POST.get('aid'))
+	answer.ans = request.POST.get('answer', '').strip()
+	answer.save()
+
+	question = Questions.objects.filter(pk=request.POST.get('qid')).first()
+	return _redirect_to_browse(question.questionType if question else 'Continuous')
 

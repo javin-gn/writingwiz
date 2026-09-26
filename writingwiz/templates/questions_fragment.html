@@ -11,8 +11,10 @@
       <details>
         <summary>Model Answer</summary>
         <p>{{ ans.ans|linebreaksbr }}</p>
+        {% if superuser %}<a href="/edit_answer/{{ ans.ansid }}/">Edit this answer</a>{% endif %}
       </details>
     {% endfor %}
+    {% if superuser %}<p><a href="/edit_question/{{ q.questionid }}/">Edit question</a></p>{% endif %}
   </div>
   {% endfor %}
 </div>
