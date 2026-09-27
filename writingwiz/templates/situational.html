@@ -8,8 +8,10 @@
 
 <script type="text/javascript" charset="utf-8">
 
-function loadQuestions(query, ty){
-	$( "#questions").load('/questions/?type=' + ty + '&query=' + query);
+function loadQuestions(el, query, ty){
+	$('.category-link').removeClass('active');
+	if (el) { $(el).addClass('active'); }
+	$( "#questions").load('/questions/?type=' + encodeURIComponent(ty) + '&query=' + encodeURIComponent(query));
 }
 
 </script>
@@ -20,11 +22,10 @@ function loadQuestions(query, ty){
 		<div class="page-header" id="banner">
 		<div class="row">
 	           <div class="col-lg-4">
-				 <br/>
-				 <p>Categories</p>
+				 <p class="sidebar-heading">Categories</p>
 	             {{list|safe}}
 	           </div>
-	           <div class="col-lg-6" style="padding: 15px 15px 0 15px;">
+	           <div class="col-lg-8" style="padding: 15px 15px 0 15px;">
 	             {{content|safe}}
 	           </div>
 	     </div>

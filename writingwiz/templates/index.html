@@ -6,46 +6,29 @@
 
 {% load static %}
 {% block statics %}
-	<script type="text/javascript" src="/static/scripts/jquery.nivo.slider.js"></script>
-	<script type="text/javascript">
-	    $(window).load(function () {
-	        $('#featured').nivoSlider({
-	            directionNav: false,
-	            pauseOnHover: false,
-	            manualAdvance: false
-	        });
-	    });
-	</script>
-
 {% endblock %}
 
 
 {% block contents %}
-	
+
 	<div class="container">
 	       <div class="page-header" id="banner">
-	  
-	        
-	           
-		                 <div class="slider-wrapper theme-bar">
-		                 <div id="featured" class="nivoSlider">
-		                 <img src="{% static 'images/read.jpg'%}" alt="" />
-		                 <img src="{% static 'images/learn.jpg'%}" alt="" data-transition="slideInLeft" />
-		                 <img src="{% static 'images/write.jpg'%}" alt=""/>
-		                 </div>
-		                 </div>
-	        
-	        
-	         
+
+	         <div class="hero">
+	           <h1>Write with confidence for PSLE English</h1>
+	           <p>Practice real PSLE-style Continuous and Situational Writing questions, build your vocabulary, and get instant feedback on your essays.</p>
+	           <a href="/register/" class="btn btn-primary btn-lg">Sign up for free</a>
+	         </div>
+
 	         <div class="row">
 	           <div class="col-lg-12">
 	             <h2>Features</h2>
 	           </div>
 	         </div>
-	         <div class="row">
+	         <div class="row feature-row">
 	           <div class="col-lg-4">
 	             <div class="bs-example">
-				   <div class="panel panel-default">
+				   <div class="panel panel-default feature-card">
 				     <div class="panel-heading">PSLE Standard Questions</div>
 				     <div class="panel-body">
 				       <ul>
@@ -56,12 +39,12 @@
 					   <center><a href="/register_page/" target="_parent"><button type="button" class="btn btn-primary">Sign up Now!</button></a></center>
 				     </div>
 				   </div>
-  	               
+
 	             </div>
 	           </div>
   	           <div class="col-lg-4">
 	             <div class="bs-example">
-					 <div class="panel panel-default">
+					 <div class="panel panel-default feature-card">
 					   <div class="panel-heading">Extensive Vocabulary Listings</div>
 					   <div class="panel-body">
 						 <ul>
@@ -76,7 +59,7 @@
 	           </div>
 	           <div class="col-lg-4">
 	             <div class="bs-example">
-				  <div class="panel panel-default">
+				  <div class="panel panel-default feature-card">
 				    <div class="panel-heading">Step-by-Step Guide</div>
 				    <div class="panel-body">
 					 <ul>
@@ -87,7 +70,7 @@
 					 <center><a href="/register_page/" target="_parent"><button type="button" class="btn btn-primary">Sign up Now!</button></a></center>
 				    </div>
 				  </div>
-	              
+
 	             </div>
 	           </div>
 	         </div>

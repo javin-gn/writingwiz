@@ -1,21 +1,31 @@
 {% if questions %}
+<p class="question-list-count">{{ questions|length }} question{{ questions|length|pluralize }}</p>
+<p class="badge-legend"><span class="question-category-badge">Category</span> <span class="question-theme-badge">Theme</span></p>
 <div class="list-group">
   {% for q in questions %}
-  <div class="list-group-item">
-    <h4>{{ q.questionCategory }}</h4>
-    <p>{{ q.question|linebreaksbr }}</p>
-    {% for pic in q.pictorial_set.all %}
-      <img src="/static/pictures/{{ pic.url }}" style="max-width:100%;" alt="">
-    {% endfor %}
+  <details class="list-group-item question-item">
+    <summary class="question-summary">
+      <span class="question-category-badge">{{ q.questionCategory }}</span>
+      {% if q.theme %}<span class="question-theme-badge">{{ q.theme }}</span>{% endif %}
+      <span class="question-preview">{{ q.question|truncatechars:90 }}</span>
+    </summary>
+    <div class="question-detail">
+      <p class="question-text">{{ q.question|linebreaksbr }}</p>
+      {% for pic in q.pictorial_set.all %}
+        <img src="/static/pictures/{{ pic.url }}" class="question-picture" alt="">
+      {% endfor %}
+      {% if superuser %}<div class="question-actions"><a class="edit-link" href="/edit_question/{{ q.questionid }}/">Edit question</a></div>{% endif %}
+    </div>
     {% for ans in q.modelans_set.all %}
-      <details>
+      <details class="answer-panel">
         <summary>Model Answer</summary>
-        <p>{{ ans.ans|linebreaksbr }}</p>
-        {% if superuser %}<a href="/edit_answer/{{ ans.ansid }}/">Edit this answer</a>{% endif %}
+        <div class="answer-body">
+          <p>{{ ans.ans|linebreaksbr }}</p>
+          {% if superuser %}<a class="edit-link" href="/edit_answer/{{ ans.ansid }}/">Edit this answer</a>{% endif %}
+        </div>
       </details>
     {% endfor %}
-    {% if superuser %}<p><a href="/edit_question/{{ q.questionid }}/">Edit question</a></p>{% endif %}
-  </div>
+  </details>
   {% endfor %}
 </div>
 {% else %}

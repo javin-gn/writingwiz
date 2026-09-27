@@ -3,6 +3,7 @@ from django.template.loader import get_template
 from django.template import Context
 from django.http import HttpResponse
 from django.db import connection
+from django.db.models import Count
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.contrib.auth.models import User
@@ -193,16 +194,33 @@ def db(request):
 def _category_link_list(qtype):
 	categories = (
 		Questions.objects.filter(questionType=qtype)
+		.values('questionCategory')
+		.annotate(count=Count('questionid'))
 		.order_by('questionCategory')
-		.values_list('questionCategory', flat=True)
-		.distinct()
 	)
 	return format_html(
-		'<ul class="list-unstyled">{}</ul>',
+		'<ul class="list-unstyled category-list">{}</ul>',
 		format_html_join(
 			'',
-			'<li><a href="#" onclick="loadQuestions(\'{}\', \'{}\'); return false;">{}</a></li>',
-			((c, qtype, c) for c in categories),
+			'<li><a href="#" class="category-link" onclick="loadQuestions(this, \'{}\', \'{}\'); return false;">{} <span class="category-count">{}</span></a></li>',
+			((c['questionCategory'], qtype, c['questionCategory'], c['count']) for c in categories),
+		),
+	)
+
+def _theme_link_list(qtype):
+	themes = (
+		Questions.objects.filter(questionType=qtype)
+		.exclude(theme='')
+		.values('theme')
+		.annotate(count=Count('questionid'))
+		.order_by('theme')
+	)
+	return format_html(
+		'<ul class="list-unstyled category-list">{}</ul>',
+		format_html_join(
+			'',
+			'<li><a href="#" class="category-link" onclick="loadQuestionsByTheme(this, \'{}\', \'{}\'); return false;">{} <span class="category-count">{}</span></a></li>',
+			((t['theme'], qtype, t['theme'], t['count']) for t in themes),
 		),
 	)
 
@@ -218,6 +236,7 @@ def continuous(request):
 
 	return render(request, 'continuous.html', {
 		'catlist': _category_link_list('Continuous'),
+		'themelist': _theme_link_list('Continuous'),
 		'addQuestionBtn': '',
 		'content': '<div id="questions"><p>Select a category on the left to browse questions.</p></div>',
 		'user': usr,
@@ -335,6 +354,36 @@ def vp(request):
 		'superuser': superuser,
 	})
 
+_THEME_FILLER_WORDS = {'and', '&', 'the', 'of'}
+
+def _theme_words(theme):
+	return {w for w in theme.lower().replace('&', ' ').split() if w not in _THEME_FILLER_WORDS}
+
+def _vivid_vocabulary_for_theme(theme, limit=12):
+	"""Vocabulary/Phrase 'theme' values use the same theme names as Questions,
+	but entered inconsistently ("Outdoor" vs "Outdoor Activities", "Accidents &
+	Disasters" vs "Accidents and Disasters") - there's no field that survives an
+	exact match, so this matches on word overlap instead. There is no similar
+	link for *category* - Vocabulary/Phrase categories are word-topic groups
+	(Emotions, Actions & Movements) while Questions categories are writing
+	formats (Letter, Picture-Based); the two taxonomies don't correspond at all,
+	so no suggestion can honestly be made from category.
+	"""
+	if not theme:
+		return []
+	target_words = _theme_words(theme)
+	if not target_words:
+		return []
+
+	suggestions = []
+	for word, entry_theme in Vocabulary.objects.exclude(theme='').values_list('vocabulary', 'theme'):
+		if _theme_words(entry_theme) & target_words:
+			suggestions.append(word.strip())
+	for phrase, entry_theme in Phrase.objects.exclude(theme='').values_list('phrase', 'theme'):
+		if _theme_words(entry_theme) & target_words:
+			suggestions.append(phrase.strip())
+	return suggestions[:limit]
+
 #Standalone rule-based PSLE essay grader - not an AI/LLM assessment, see grading.py
 def essay_grader(request):
 	if request.user.is_authenticated:
@@ -344,33 +393,37 @@ def essay_grader(request):
 		usr = ""
 		superuser = ""
 
-	questions = Questions.objects.order_by('questionType', 'questionCategory', 'questionid')
-
 	result = None
 	essay_text = ''
-	qtype = 'Continuous'
-	question_id = ''
 
 	if request.method == 'POST':
 		essay_text = request.POST.get('essay', '')
 		qtype = request.POST.get('qtype', 'Continuous')
 		question_id = request.POST.get('question_id', '')
 
-		question_text = ''
-		if question_id:
-			question = Questions.objects.filter(questionid=question_id).first()
-			if question:
-				qtype = question.questionType
-				question_text = question.question
+		question = Questions.objects.filter(questionid=question_id).first() if question_id else None
+		question_text = question.question if question else ''
+		if question:
+			qtype = question.questionType
 
 		result = grade_essay(essay_text, qtype=qtype, question_text=question_text)
+	else:
+		qtype = request.GET.get('qtype', 'Continuous')
+		if qtype not in QUESTION_TYPES:
+			qtype = 'Continuous'
+		# order_by('?') -> a fresh random question each load/refresh, for both sqlite and postgres
+		question = Questions.objects.filter(questionType=qtype).order_by('?').first()
+		question_id = question.questionid if question else ''
+
+	vocab_suggestions = _vivid_vocabulary_for_theme(question.theme if question else '')
 
 	return render(request, 'essay_grader.html', {
-		'questions': questions,
+		'question': question,
 		'result': result,
 		'essay_text': essay_text,
 		'qtype': qtype,
 		'question_id': question_id,
+		'vocab_suggestions': vocab_suggestions,
 		'user': usr,
 		'superuser': superuser,
 	})
@@ -379,10 +432,13 @@ def essay_grader(request):
 def questions_browse(request):
 	qtype = request.GET.get('type', '')
 	category = request.GET.get('query', '')
+	theme = request.GET.get('theme', '')
 
 	questions = Questions.objects.filter(questionType=qtype)
 	if category:
 		questions = questions.filter(questionCategory=category)
+	if theme:
+		questions = questions.filter(theme=theme)
 	questions = questions.order_by('questionid')
 
 	return render(request, 'questions_fragment.html', {

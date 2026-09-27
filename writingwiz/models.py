@@ -26,6 +26,7 @@ class Questions(models.Model):
     question = models.TextField()
     questionCategory = models.CharField(db_column='questionCategory', max_length=255) # Field name made lowercase.
     questionType = models.CharField(db_column='questionType', max_length=255) # Field name made lowercase.
+    theme = models.CharField(max_length=255, blank=True, default='')
     class Meta:
         db_table = 'questions'
     def __str__(self):

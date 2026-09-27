@@ -6,16 +6,12 @@
 
 {% block statics %}
 <script type="text/javascript">
-function onQuestionChange(sel) {
-	var opt = sel.options[sel.selectedIndex];
-	var type = opt.getAttribute('data-type');
-	if (type) {
-		var radios = document.getElementsByName('qtype');
-		for (var i = 0; i < radios.length; i++) {
-			radios[i].checked = (radios[i].value === type);
-		}
-	}
+function updateWordCount() {
+	var text = document.getElementById('essay').value.trim();
+	var count = text ? text.split(/\s+/).length : 0;
+	document.getElementById('wordCount').textContent = count + (count === 1 ? ' word' : ' words');
 }
+document.addEventListener('DOMContentLoaded', updateWordCount);
 </script>
 {% endblock %}
 
@@ -23,42 +19,48 @@ function onQuestionChange(sel) {
     <div class="container">
          <div class="page-header" id="banner">
            <h1>PSLE English Essay Grader</h1>
-           <p class="text-muted">This is a <strong>rule-based</strong> checker, not an AI marker - it checks spelling, sentence mechanics, length, paragraphing and vocabulary variety, and gives a rough content-relevance score if you pick a question. It cannot judge whether your story actually makes sense or is well told, the way a real teacher can. Use it as a checklist, not a final grade.</p>
+           <p class="text-muted">This is a <strong>rule-based</strong> checker, not an AI marker - it checks spelling, sentence mechanics, length, paragraphing and vocabulary variety, and gives a rough content-relevance score against the question shown below. It cannot judge whether your story actually makes sense or is well told, the way a real teacher can. Use it as a checklist, not a final grade.</p>
 
            <div class="row">
              <div class="col-lg-6">
+               <div class="form-group">
+                 <label>Writing Type</label><br/>
+                 <a href="/grader/?qtype=Continuous" class="btn btn-default {% if qtype == "Continuous" %}active{% endif %}">Continuous Writing</a>
+                 <a href="/grader/?qtype=Situational" class="btn btn-default {% if qtype == "Situational" %}active{% endif %}">Situational Writing</a>
+               </div>
+
+               <p class="badge-legend"><span class="question-category-badge">Category</span> <span class="question-theme-badge">Theme</span></p>
+
+               <div class="well">
+                 {% if question %}
+                   <p><span class="question-category-badge">{{ question.questionCategory }}</span> {% if question.theme %}<span class="question-theme-badge">{{ question.theme }}</span>{% endif %}</p>
+                   <p class="question-text">{{ question.question|linebreaksbr }}</p>
+                   {% for pic in question.pictorial_set.all %}
+                     <img src="/static/pictures/{{ pic.url }}" class="question-picture" alt="">
+                   {% endfor %}
+                 {% else %}
+                   <p class="text-muted">No {{ qtype }} questions available.</p>
+                 {% endif %}
+                 <a href="/grader/?qtype={{ qtype }}" class="btn btn-default btn-sm">&#8635; New Question</a>
+               </div>
+
+               {% if vocab_suggestions %}
+               <div class="alert alert-info">
+                 <strong>Vivid vocabulary for this theme:</strong>
+                 <p class="text-muted" style="margin: 4px 0 8px;">Matched on theme only - vocabulary/phrase categories (Emotions, Actions &amp; Movements, ...) don't correspond to question categories (Letter, Picture-Based, ...), so no suggestion can honestly be made from category.</p>
+                 {% for w in vocab_suggestions %}<span class="question-theme-badge">{{ w }}</span> {% endfor %}
+               </div>
+               {% endif %}
+
                <form method="post" action="/grader/">
                  {% csrf_token %}
-                 <div class="form-group">
-                   <label>Writing Type</label><br/>
-                   <label class="radio-inline"><input type="radio" name="qtype" value="Continuous" {% if qtype == "Continuous" %}checked{% endif %}> Continuous Writing</label>
-                   <label class="radio-inline"><input type="radio" name="qtype" value="Situational" {% if qtype == "Situational" %}checked{% endif %}> Situational Writing</label>
-                 </div>
-
-                 <div class="form-group">
-                   <label for="question_id">Question (optional - improves the relevance score)</label>
-                   <select name="question_id" id="question_id" class="form-control" onchange="onQuestionChange(this)">
-                     <option value="">-- No specific question --</option>
-                     <optgroup label="Continuous">
-                       {% for q in questions %}
-                         {% if q.questionType == "Continuous" %}
-                           <option value="{{ q.questionid }}" data-type="Continuous" {% if question_id == q.questionid|stringformat:"s" %}selected{% endif %}>{{ q.questionCategory }} - {{ q.question|truncatechars:70 }}</option>
-                         {% endif %}
-                       {% endfor %}
-                     </optgroup>
-                     <optgroup label="Situational">
-                       {% for q in questions %}
-                         {% if q.questionType == "Situational" %}
-                           <option value="{{ q.questionid }}" data-type="Situational" {% if question_id == q.questionid|stringformat:"s" %}selected{% endif %}>{{ q.questionCategory }} - {{ q.question|truncatechars:70 }}</option>
-                         {% endif %}
-                       {% endfor %}
-                     </optgroup>
-                   </select>
-                 </div>
+                 <input type="hidden" name="qtype" value="{{ qtype }}">
+                 <input type="hidden" name="question_id" value="{{ question_id }}">
 
                  <div class="form-group">
                    <label for="essay">Your Essay</label>
-                   <textarea name="essay" id="essay" class="form-control" rows="16">{{ essay_text }}</textarea>
+                   <textarea name="essay" id="essay" class="form-control" rows="16" oninput="updateWordCount()">{{ essay_text }}</textarea>
+                   <p class="text-muted" id="wordCount" style="margin-top: 4px;">0 words</p>
                  </div>
 
                  <button type="submit" class="btn btn-primary">Grade Essay</button>
