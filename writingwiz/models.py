@@ -106,6 +106,23 @@ class EssayAttempt(models.Model):
     def percent(self):
         return round(self.total_score / self.total_max * 100) if self.total_max else 0
 
+class Announcement(models.Model):
+    LEVEL_CHOICES = [
+        ('info', 'Info'),
+        ('success', 'Success'),
+        ('warning', 'Warning'),
+    ]
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default='info')
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        db_table = 'announcements'
+        ordering = ['-created_at']
+    def __str__(self):
+        return self.title
+
 class UserProfile(models.Model):
     #required by the auth model
     user = models.OneToOneField(User, on_delete=models.CASCADE) 

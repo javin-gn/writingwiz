@@ -14,6 +14,17 @@
 	<div class="container">
 	       <div class="page-header" id="banner">
 
+	         {% if announcements %}
+	         <div class="announcement-panel">
+	           {% for a in announcements %}
+	           <div class="alert alert-{{ a.level }} announcement-item">
+	             <strong>{{ a.title }}</strong>
+	             <p>{{ a.message|linebreaksbr }}</p>
+	           </div>
+	           {% endfor %}
+	         </div>
+	         {% endif %}
+
 	         <div class="hero">
 	           <h1>Write with confidence for PSLE English</h1>
 	           <p>Practice real PSLE-style Continuous and Situational Writing questions, build your vocabulary, and get instant feedback on your essays.</p>

@@ -5,13 +5,76 @@
 {% endblock %}
 
 {% block statics %}
+<script src="/static/scripts/tinymce/tinymce.min.js" referrerpolicy="origin"></script>
 <script type="text/javascript">
-function updateWordCount() {
-	var text = document.getElementById('essay').value.trim();
+function updateWordCount(text) {
+	text = text.trim();
 	var count = text ? text.split(/\s+/).length : 0;
 	document.getElementById('wordCount').textContent = count + (count === 1 ? ' word' : ' words');
 }
-document.addEventListener('DOMContentLoaded', updateWordCount);
+
+// Grading (grading.py) works on plain text and expects paragraph breaks as a
+// blank line between paragraphs - build that explicitly from the editor's
+// HTML rather than relying on TinyMCE's own plain-text export, since its
+// exact newline convention between blocks isn't something to assume.
+function editorHtmlToPlainText(html) {
+	var container = document.createElement('div');
+	container.innerHTML = html;
+	var blocks = container.querySelectorAll('p, li, div, h1, h2, h3, blockquote');
+	if (blocks.length === 0) {
+		return (container.textContent || '').trim();
+	}
+	var parts = [];
+	blocks.forEach(function (el) {
+		el.querySelectorAll('br').forEach(function (br) { br.replaceWith('\n'); });
+		var t = el.textContent.replace(/\n{2,}/g, '\n').trim();
+		if (t) { parts.push(t); }
+	});
+	return parts.join('\n\n');
+}
+
+// The reverse conversion - needed because the textarea holds plain text with
+// blank-line paragraph breaks (e.g. when re-showing a previously graded essay),
+// and without this TinyMCE would render it as one run-on paragraph.
+function plainTextToEditorHtml(text) {
+	if (!text) { return ''; }
+	return text.split(/\n\s*\n/).map(function (para) {
+		var lineDiv = document.createElement('div');
+		var html = para.split('\n').map(function (line) {
+			lineDiv.textContent = line;
+			return lineDiv.innerHTML;
+		}).join('<br>');
+		return '<p>' + html + '</p>';
+	}).join('');
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+	var essayEl = document.getElementById('essay');
+	essayEl.value = plainTextToEditorHtml(essayEl.value);
+
+	tinymce.init({
+		selector: '#essay',
+		height: 420,
+		menubar: false,
+		statusbar: false,
+		branding: false,
+		plugins: 'lists',
+		toolbar: 'undo redo | bold italic underline | bullist numlist | removeformat',
+		content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.6; }',
+		setup: function (editor) {
+			editor.on('keyup change undo redo init', function () {
+				updateWordCount(editorHtmlToPlainText(editor.getContent()));
+			});
+		},
+	});
+
+	document.getElementById('essayForm').addEventListener('submit', function () {
+		var editor = tinymce.get('essay');
+		if (editor) {
+			editor.getElement().value = editorHtmlToPlainText(editor.getContent());
+		}
+	});
+});
 </script>
 {% endblock %}
 
@@ -56,14 +119,14 @@ document.addEventListener('DOMContentLoaded', updateWordCount);
                  {% endif %}
                </div>
 
-               <form method="post" action="/grader/">
+               <form method="post" action="/grader/" id="essayForm">
                  {% csrf_token %}
                  <input type="hidden" name="qtype" value="{{ qtype }}">
                  <input type="hidden" name="question_id" value="{{ question_id }}">
 
                  <div class="form-group">
                    <label for="essay">Your Essay</label>
-                   <textarea name="essay" id="essay" class="form-control" rows="16" oninput="updateWordCount()">{{ essay_text }}</textarea>
+                   <textarea name="essay" id="essay" class="form-control" rows="16">{{ essay_text }}</textarea>
                    <p class="text-muted" id="wordCount" style="margin-top: 4px;">0 words</p>
                  </div>
 

@@ -204,6 +204,16 @@ label {
 	box-shadow: none;
 }
 
+.announcement-panel {
+	margin-bottom: 20px;
+}
+.announcement-item {
+	margin-bottom: 10px;
+}
+.announcement-item p {
+	margin: 4px 0 0;
+}
+
 /* ---- Tables ---- */
 .table {
 	background: var(--color-bg);

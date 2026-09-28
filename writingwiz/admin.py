@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from .models import (
     Questions, ModelAns, Pictorial, LearningVideo,
-    VpCategory, Vocabulary, Phrase, UserProfile, EssayAttempt,
+    VpCategory, Vocabulary, Phrase, UserProfile, EssayAttempt, Announcement,
 )
 
 
@@ -85,3 +85,11 @@ class EssayAttemptAdmin(admin.ModelAdmin):
     list_filter = ('qtype', 'created_at')
     search_fields = ('user__username', 'essay_text')
     autocomplete_fields = ('question',)
+
+
+@admin.register(Announcement)
+class AnnouncementAdmin(admin.ModelAdmin):
+    list_display = ('title', 'level', 'is_active', 'created_at')
+    list_filter = ('level', 'is_active')
+    list_editable = ('is_active',)
+    search_fields = ('title', 'message')

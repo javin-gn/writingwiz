@@ -28,7 +28,7 @@ from django.conf import settings
 
 from .models import (
 	Greeting, Questions, ModelAns, Pictorial, LearningVideo, Vocabulary, Phrase,
-	EssayAttempt, _next_question_id, _next_ans_id, _next_pic_id,
+	EssayAttempt, Announcement, _next_question_id, _next_ans_id, _next_pic_id,
 )
 from .grading import grade_essay
 
@@ -100,12 +100,13 @@ def Forbidden(request):
 
 #Home Page
 def index(request):
+	announcements = Announcement.objects.filter(is_active=True)
 	if request.user.is_authenticated:
 		usr = request.session.get("username", "")
 		superuser = request.session.get("superuser", "")
-		return render(request, 'index.html', {'user': usr, 'superuser': superuser})
+		return render(request, 'index.html', {'user': usr, 'superuser': superuser, 'announcements': announcements})
 	else:
-		return render(request, 'index.html', {'user': "", 'superuser': ""})
+		return render(request, 'index.html', {'user': "", 'superuser': "", 'announcements': announcements})
 
 
 #Register Page
