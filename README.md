@@ -1,44 +1,31 @@
-# Python: Getting Started
+# WritingWiz
 
-A barebones Django app, which can easily be deployed to Heroku.
+A PSLE English composition practice site: browse Continuous and Situational Writing questions with model answers, learn vocabulary and phrases by theme, watch guided videos, and grade your own essays with a rule-based checker.
 
-This application supports the [Getting Started with Python on Heroku](https://devcenter.heroku.com/articles/getting-started-with-python) article - check it out.
+## Stack
 
-## Running Locally
+- Django 4.2
+- Postgres (Supabase) in production via `dj-database-url`; falls back to local SQLite when `DATABASE_URL` is unset
+- WhiteNoise for static files
+- django-allauth for Google sign-in
+- Deployed on Vercel (zero-config Python/Django detection, no `vercel.json` needed)
 
-Make sure you have Python [installed properly](http://install.python-guide.org). Also, install the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli) and [Postgres](https://devcenter.heroku.com/articles/heroku-postgresql#local-setup).
-
-```sh
-$ git clone git@github.com:heroku/python-getting-started.git
-$ cd python-getting-started
-
-$ pipenv install
-
-$ createdb python_getting_started
-
-$ python manage.py migrate
-$ python manage.py collectstatic
-
-$ heroku local
-```
-
-Your app should now be running on [localhost:5000](http://localhost:5000/).
-
-## Deploying to Heroku
+## Running locally
 
 ```sh
-$ heroku create
-$ git push heroku master
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 
-$ heroku run python manage.py migrate
-$ heroku open
+cp .env.example .env   # fill in SECRET_KEY, leave DATABASE_URL unset to use SQLite
+
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
 ```
-or
 
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+The app runs at [http://127.0.0.1:8000/](http://127.0.0.1:8000/).
 
-## Documentation
+## Deploying
 
-For more information about using Python on Heroku, see these Dev Center articles:
-
-- [Python on Heroku](https://devcenter.heroku.com/categories/python)
+Push to the branch connected on Vercel. Set `DATABASE_URL` (and any allauth/Google OAuth env vars) in the Vercel project settings — see `.env.example` for the full list.

@@ -6,6 +6,12 @@ staticfiles/
 .vercel
 .env
 
+# macOS
+.DS_Store
+
+# Virtualenv
+venv/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
