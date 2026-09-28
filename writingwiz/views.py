@@ -11,8 +11,10 @@ from django.contrib.auth import authenticate
 from django.template import RequestContext
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
+from django.contrib.auth import update_session_auth_hash
 
 import hashlib
+from functools import wraps
 
 from django.utils.html import format_html, format_html_join
 
@@ -26,7 +28,7 @@ from django.conf import settings
 
 from .models import (
 	Greeting, Questions, ModelAns, Pictorial, LearningVideo, Vocabulary, Phrase,
-	_next_question_id, _next_ans_id, _next_pic_id,
+	EssayAttempt, _next_question_id, _next_ans_id, _next_pic_id,
 )
 from .grading import grade_essay
 
@@ -45,6 +47,18 @@ def _session_user(request):
 	if request.user.is_authenticated:
 		return request.session.get('username', ''), request.session.get('superuser', '')
 	return '', ''
+
+def login_required_view(view_func):
+	"""Redirects to /login/ (returning here afterwards) for full pages under
+	Browse/Resources. Not for AJAX-fragment endpoints - see questions_browse,
+	which returns a fragment instead since a redirect would dump a full login
+	page's HTML into the #questions div."""
+	@wraps(view_func)
+	def wrapper(request, *args, **kwargs):
+		if not request.user.is_authenticated:
+			return HttpResponseRedirect('/login/?url=' + request.path)
+		return view_func(request, *args, **kwargs)
+	return wrapper
 
 QUESTION_TYPES = ['Continuous', 'Situational']
 
@@ -88,7 +102,7 @@ def Forbidden(request):
 def index(request):
 	if request.user.is_authenticated:
 		usr = request.session.get("username", "")
-		superuser = request.session.get("superuser", "") 
+		superuser = request.session.get("superuser", "")
 		return render(request, 'index.html', {'user': usr, 'superuser': superuser})
 	else:
 		return render(request, 'index.html', {'user': "", 'superuser': ""})
@@ -226,6 +240,7 @@ def _theme_link_list(qtype):
 
 
 #Continuous Writing browse page
+@login_required_view
 def continuous(request):
 	if request.user.is_authenticated:
 		usr = request.session.get("username", "")
@@ -244,6 +259,7 @@ def continuous(request):
 	})
 
 #Situational Writing browse page
+@login_required_view
 def situational(request):
 	if request.user.is_authenticated:
 		usr = request.session.get("username", "")
@@ -260,6 +276,7 @@ def situational(request):
 	})
 
 #Simple static informational page
+@login_required_view
 def guides(request):
 	if request.user.is_authenticated:
 		usr = request.session.get("username", "")
@@ -284,6 +301,7 @@ def packages(request):
 	})
 
 #List of learning videos
+@login_required_view
 def videolist(request):
 	if request.user.is_authenticated:
 		usr = request.session.get("username", "")
@@ -309,6 +327,7 @@ def videolist(request):
 	})
 
 #Watch a single video, counting the view
+@login_required_view
 def watch_video(request, video_id):
 	if request.user.is_authenticated:
 		usr = request.session.get("username", "")
@@ -330,6 +349,7 @@ def watch_video(request, video_id):
 	})
 
 #Vivid Vocabulary Listing (vocabulary + phrases combined)
+@login_required_view
 def vp(request):
 	if request.user.is_authenticated:
 		usr = request.session.get("username", "")
@@ -385,6 +405,7 @@ def _vivid_vocabulary_for_theme(theme, limit=12):
 	return suggestions[:limit]
 
 #Standalone rule-based PSLE essay grader - not an AI/LLM assessment, see grading.py
+@login_required_view
 def essay_grader(request):
 	if request.user.is_authenticated:
 		usr = request.session.get("username", "")
@@ -407,15 +428,37 @@ def essay_grader(request):
 			qtype = question.questionType
 
 		result = grade_essay(essay_text, qtype=qtype, question_text=question_text)
+
+		EssayAttempt.objects.create(
+			user=request.user,
+			question=question,
+			qtype=qtype,
+			essay_text=essay_text,
+			total_score=result['total_score'],
+			total_max=result['total_max'],
+			content_score=result['content_score'],
+			language_score=result['language_score'],
+		)
 	else:
 		qtype = request.GET.get('qtype', 'Continuous')
 		if qtype not in QUESTION_TYPES:
 			qtype = 'Continuous'
-		# order_by('?') -> a fresh random question each load/refresh, for both sqlite and postgres
-		question = Questions.objects.filter(questionType=qtype).order_by('?').first()
+		question = None
+		requested_qid = request.GET.get('question_id')
+		if requested_qid:
+			question = Questions.objects.filter(questionid=requested_qid).first()
+			if question:
+				qtype = question.questionType
+		if question is None:
+			# order_by('?') -> a fresh random question each load/refresh, for both sqlite and postgres
+			question = Questions.objects.filter(questionType=qtype).order_by('?').first()
 		question_id = question.questionid if question else ''
 
 	vocab_suggestions = _vivid_vocabulary_for_theme(question.theme if question else '')
+	attempt_history = (
+		EssayAttempt.objects.filter(user=request.user, question=question)
+		if question else EssayAttempt.objects.none()
+	)
 
 	return render(request, 'essay_grader.html', {
 		'question': question,
@@ -424,12 +467,78 @@ def essay_grader(request):
 		'qtype': qtype,
 		'question_id': question_id,
 		'vocab_suggestions': vocab_suggestions,
+		'attempt_history': attempt_history,
+		'user': usr,
+		'superuser': superuser,
+	})
+
+#Profile page - user details, password change, and overall essay grading stats
+@login_required_view
+def profile(request):
+	user = request.user
+	errors = []
+	success = None
+
+	if request.method == 'POST':
+		action = request.POST.get('action')
+
+		if action == 'update_details':
+			new_email = request.POST.get('email', '').strip()
+			if not new_email or '@' not in new_email:
+				errors.append('Please enter a valid email address.')
+			elif User.objects.filter(username=new_email).exclude(pk=user.pk).exists():
+				errors.append('That email is already in use.')
+			else:
+				user.email = new_email
+				user.username = new_email
+				user.save()
+				request.session['username'] = user.username
+				success = 'Your details have been updated.'
+
+		elif action == 'change_password':
+			current_password = request.POST.get('current_password', '')
+			new_password = request.POST.get('new_password', '')
+			confirm_password = request.POST.get('confirm_password', '')
+			if not user.check_password(current_password):
+				errors.append('Current password is incorrect.')
+			elif not new_password:
+				errors.append('New password cannot be empty.')
+			elif new_password != confirm_password:
+				errors.append('New passwords do not match.')
+			else:
+				user.set_password(new_password)
+				user.save()
+				update_session_auth_hash(request, user)  # keep the user logged in
+				success = 'Your password has been updated.'
+
+	attempts = EssayAttempt.objects.filter(user=user)
+	total_attempts = attempts.count()
+	avg_percent = None
+	best_percent = None
+	if total_attempts:
+		percents = [a.percent for a in attempts]
+		avg_percent = round(sum(percents) / len(percents))
+		best_percent = max(percents)
+
+	usr, superuser = _session_user(request)
+	return render(request, 'profile.html', {
+		'errors': errors,
+		'success': success,
+		'email': user.email,
+		'date_joined': user.date_joined,
+		'total_attempts': total_attempts,
+		'avg_percent': avg_percent,
+		'best_percent': best_percent,
+		'recent_attempts': attempts[:15],
 		'user': usr,
 		'superuser': superuser,
 	})
 
 #AJAX endpoint used by continuous.html / situational.html to load a filtered question list
 def questions_browse(request):
+	if not request.user.is_authenticated:
+		return HttpResponse('<p>Please <a href="/login/?url=/continuous">log in</a> to view questions.</p>')
+
 	qtype = request.GET.get('type', '')
 	category = request.GET.get('query', '')
 	theme = request.GET.get('theme', '')

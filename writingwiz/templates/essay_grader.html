@@ -44,13 +44,17 @@ document.addEventListener('DOMContentLoaded', updateWordCount);
                  <a href="/grader/?qtype={{ qtype }}" class="btn btn-default btn-sm">&#8635; New Question</a>
                </div>
 
-               {% if vocab_suggestions %}
                <div class="alert alert-info">
                  <strong>Vivid vocabulary for this theme:</strong>
                  <p class="text-muted" style="margin: 4px 0 8px;">Matched on theme only - vocabulary/phrase categories (Emotions, Actions &amp; Movements, ...) don't correspond to question categories (Letter, Picture-Based, ...), so no suggestion can honestly be made from category.</p>
-                 {% for w in vocab_suggestions %}<span class="question-theme-badge">{{ w }}</span> {% endfor %}
+                 {% if vocab_suggestions %}
+                   {% for w in vocab_suggestions %}<span class="question-theme-badge">{{ w }}</span> {% endfor %}
+                 {% elif question.theme %}
+                   <p class="text-muted">No vivid vocabulary/phrases tagged with the "{{ question.theme }}" theme yet.</p>
+                 {% else %}
+                   <p class="text-muted">Situational questions aren't tagged with a theme, so there's nothing to match vocabulary against here. Try a Continuous Writing question instead.</p>
+                 {% endif %}
                </div>
-               {% endif %}
 
                <form method="post" action="/grader/">
                  {% csrf_token %}
@@ -103,6 +107,24 @@ document.addEventListener('DOMContentLoaded', updateWordCount);
                  </table>
                {% else %}
                  <p class="text-muted">Your score and feedback will appear here after you submit an essay.</p>
+               {% endif %}
+
+               {% if attempt_history %}
+               <div class="well">
+                 <strong>Your attempts for this question</strong>
+                 <table class="table table-bordered" style="margin-top: 8px;">
+                   <thead><tr><th>Date</th><th>Score</th><th>%</th></tr></thead>
+                   <tbody>
+                     {% for a in attempt_history %}
+                     <tr>
+                       <td>{{ a.created_at|date:"d M Y, H:i" }}</td>
+                       <td>{{ a.total_score }} / {{ a.total_max }}</td>
+                       <td>{{ a.percent }}%</td>
+                     </tr>
+                     {% endfor %}
+                   </tbody>
+                 </table>
+               </div>
                {% endif %}
              </div>
            </div>

@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from .models import (
     Questions, ModelAns, Pictorial, LearningVideo,
-    VpCategory, Vocabulary, Phrase, UserProfile,
+    VpCategory, Vocabulary, Phrase, UserProfile, EssayAttempt,
 )
 
 
@@ -77,3 +77,11 @@ class PhraseAdmin(admin.ModelAdmin):
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = ('user', 'confirmation_code')
     search_fields = ('user__username',)
+
+
+@admin.register(EssayAttempt)
+class EssayAttemptAdmin(admin.ModelAdmin):
+    list_display = ('user', 'question', 'qtype', 'total_score', 'total_max', 'created_at')
+    list_filter = ('qtype', 'created_at')
+    search_fields = ('user__username', 'essay_text')
+    autocomplete_fields = ('question',)

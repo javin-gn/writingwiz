@@ -87,6 +87,25 @@ class Phrase(models.Model):
     def __str__(self):
         return self.phrase
 
+class EssayAttempt(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='essay_attempts')
+    question = models.ForeignKey(Questions, on_delete=models.CASCADE, null=True, blank=True, related_name='essay_attempts')
+    qtype = models.CharField(max_length=20)
+    essay_text = models.TextField()
+    total_score = models.FloatField()
+    total_max = models.FloatField()
+    content_score = models.FloatField()
+    language_score = models.FloatField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        db_table = 'essay_attempts'
+        ordering = ['-created_at']
+    def __str__(self):
+        return f'{self.user} - {self.total_score}/{self.total_max} on {self.created_at:%Y-%m-%d}'
+    @property
+    def percent(self):
+        return round(self.total_score / self.total_max * 100) if self.total_max else 0
+
 class UserProfile(models.Model):
     #required by the auth model
     user = models.OneToOneField(User, on_delete=models.CASCADE) 
