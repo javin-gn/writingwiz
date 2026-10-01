@@ -552,7 +552,11 @@ def questions_browse(request):
 		questions = questions.filter(questionCategory=category)
 	if theme:
 		questions = questions.filter(theme=theme)
-	questions = questions.order_by('questionid')
+	# Without this, questions_fragment.html's per-question pictorial_set.all /
+	# modelans_set.all loops each fire their own query - prefetch collapses
+	# that N+1 into 2 extra queries total, which matters a lot once DATABASE_URL
+	# points at a remote Postgres instance instead of local sqlite.
+	questions = questions.order_by('questionid').prefetch_related('pictorial_set', 'modelans_set')
 
 	return render(request, 'questions_fragment.html', {
 		'questions': questions,
