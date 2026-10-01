@@ -152,6 +152,11 @@ def accounts(request):
             site_settings.registration_enabled = not site_settings.registration_enabled
             site_settings.save()
             success = f'Registration is now {"open" if site_settings.registration_enabled else "closed"}.'
+        elif action == 'toggle_google_signin':
+            site_settings = SiteSettings.load()
+            site_settings.google_signin_enabled = not site_settings.google_signin_enabled
+            site_settings.save()
+            success = f'Google Sign-In is now {"enabled" if site_settings.google_signin_enabled else "disabled"}.'
         else:
             target = User.objects.filter(pk=request.POST.get('pk')).first()
 
@@ -183,6 +188,7 @@ def accounts(request):
         'next_url': next_url,
         'user_pk': request.user.pk,
         'registration_enabled': SiteSettings.load().registration_enabled,
+        'google_signin_enabled': SiteSettings.load().google_signin_enabled,
     })
 
 

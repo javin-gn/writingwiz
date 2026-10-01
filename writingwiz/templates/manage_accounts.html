@@ -29,11 +29,21 @@
 
            <div class="well" style="margin-top: 20px;">
              <h3>Registration</h3>
-             <p>New account sign-ups, including Google Sign-In, are currently <strong>{% if registration_enabled %}open{% else %}closed{% endif %}</strong>.</p>
+             <p>New account sign-ups are currently <strong>{% if registration_enabled %}open{% else %}closed{% endif %}</strong>.</p>
              <form method="post" action="/manage/accounts/">
                {% csrf_token %}
                <input type="hidden" name="action" value="toggle_registration">
                <button type="submit" class="btn btn-primary btn-sm">{% if registration_enabled %}Close Registration{% else %}Open Registration{% endif %}</button>
+             </form>
+           </div>
+
+           <div class="well" style="margin-top: 20px;">
+             <h3>Google Sign-In</h3>
+             <p>Signing in with Google is currently <strong>{% if google_signin_enabled %}enabled{% else %}disabled{% endif %}</strong>{% if not google_signin_enabled %} - this blocks it for new and existing accounts alike{% endif %}.</p>
+             <form method="post" action="/manage/accounts/">
+               {% csrf_token %}
+               <input type="hidden" name="action" value="toggle_google_signin">
+               <button type="submit" class="btn btn-primary btn-sm">{% if google_signin_enabled %}Disable Google Sign-In{% else %}Enable Google Sign-In{% endif %}</button>
              </form>
            </div>
 

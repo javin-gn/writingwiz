@@ -152,31 +152,34 @@ document.addEventListener('DOMContentLoaded', function () {
              </div>
 
              <div class="col-lg-6">
-               {% if result %}
+               {% if attempt_history %}
+                 {% with latest=attempt_history.0 %}
                  <div class="well">
-                   <h2>{{ result.total_score }} / {{ result.total_max }}</h2>
+                   <strong>Latest Attempt</strong>
+                   <p class="text-muted" style="margin: 4px 0 12px;">{{ latest.created_at|date:"d M Y, H:i" }}</p>
+                   <h2>{{ latest.total_score }} / {{ latest.total_max }}</h2>
                    <div class="progress">
-                     <div class="progress-bar" role="progressbar" style="width: {% widthratio result.total_score result.total_max 100 %}%;">
-                       {% widthratio result.total_score result.total_max 100 %}%
+                     <div class="progress-bar" role="progressbar" style="width: {% widthratio latest.total_score latest.total_max 100 %}%;">
+                       {% widthratio latest.total_score latest.total_max 100 %}%
                      </div>
                    </div>
-                   <p>Content: {{ result.content_score }} / {{ result.content_max }} &nbsp; | &nbsp; Language: {{ result.language_score }} / {{ result.language_max }}</p>
-                   <p class="text-muted">{{ result.word_count }} words, {{ result.sentence_count }} sentences, {{ result.paragraph_count }} paragraph(s).</p>
+                   <p>Content: {{ latest.content_score }} / {{ latest.content_max }} &nbsp; | &nbsp; Language: {{ latest.language_score }} / {{ latest.language_max }}</p>
                  </div>
 
-                 {% if result.suggestions %}
+                 {% if latest.suggestions %}
                  <div class="alert alert-info">
                    <strong>Suggestions:</strong>
                    <ul>
-                     {% for s in result.suggestions %}<li>{{ s }}</li>{% endfor %}
+                     {% for s in latest.suggestions %}<li>{{ s }}</li>{% endfor %}
                    </ul>
                  </div>
                  {% endif %}
 
+                 {% if latest.breakdown %}
                  <table class="table table-bordered">
                    <thead><tr><th>Criterion</th><th>Score</th><th>Notes</th></tr></thead>
                    <tbody>
-                     {% for b in result.breakdown %}
+                     {% for b in latest.breakdown %}
                      <tr>
                        <td>{{ b.label }}</td>
                        <td>{{ b.score }} / {{ b.max }}</td>
@@ -185,19 +188,22 @@ document.addEventListener('DOMContentLoaded', function () {
                      {% endfor %}
                    </tbody>
                  </table>
+                 {% endif %}
+                 {% endwith %}
                {% else %}
                  <p class="text-muted">Your score and feedback will appear here after you submit an essay.</p>
                {% endif %}
 
-               {% if attempt_history %}
+               {% if attempt_history|length > 1 %}
                <div class="well">
-                 <strong>Your attempts for this question</strong>
+                 <strong>Previous Attempts</strong>
 
                  <div id="attemptsSummaryPanel">
                    <table class="table table-bordered" style="margin-top: 8px;">
                      <thead><tr><th>Date</th><th>Content</th><th>Language</th><th>Total</th><th>%</th><th></th></tr></thead>
                      <tbody>
                        {% for a in attempt_history %}
+                       {% if not forloop.first %}
                        <tr>
                          <td>{{ a.created_at|date:"d M Y, H:i" }}</td>
                          <td>{{ a.content_score }} / {{ a.content_max }}</td>
@@ -206,16 +212,23 @@ document.addEventListener('DOMContentLoaded', function () {
                          <td>{{ a.percent }}%</td>
                          <td>{% if a.breakdown %}<a href="#" onclick="showAttemptDetails({{ a.id }}); return false;">Details</a>{% endif %}</td>
                        </tr>
+                       {% endif %}
                        {% endfor %}
                      </tbody>
                    </table>
                  </div>
 
                  {% for a in attempt_history %}
-                 {% if a.breakdown %}
+                 {% if not forloop.first and a.breakdown %}
                  <div id="attemptDetailsPanel{{ a.id }}" class="attempt-details-panel" style="display: none;">
                    <p style="margin-top: 8px;"><a href="#" onclick="hideAttemptDetails({{ a.id }}); return false;">&larr; Back to attempts</a></p>
                    <p class="text-muted">{{ a.created_at|date:"d M Y, H:i" }} &middot; {{ a.total_score }} / {{ a.total_max }} ({{ a.percent }}%)</p>
+                   {% if a.suggestions %}
+                   <div class="alert alert-info">
+                     <strong>Suggestions:</strong>
+                     <ul>{% for s in a.suggestions %}<li>{{ s }}</li>{% endfor %}</ul>
+                   </div>
+                   {% endif %}
                    <table class="table table-bordered">
                      <thead><tr><th>Criterion</th><th>Score</th><th>Notes</th></tr></thead>
                      <tbody>

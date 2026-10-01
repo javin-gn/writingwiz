@@ -38,8 +38,10 @@
                <button type="submit" class="btn btn-primary btn-block">Log In</button>
              </form>
 
+             {% if google_signin_enabled %}
              <p class="auth-divider">&mdash; or &mdash;</p>
              <a href="{% provider_login_url 'google' next=next|default:'/' %}" class="btn btn-default btn-block">Sign in with Google</a>
+             {% endif %}
 
              <p class="auth-switch">Don't have an account? <a href="/register/">Register</a></p>
            </div>

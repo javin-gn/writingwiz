@@ -99,6 +99,7 @@ class EssayAttempt(models.Model):
     language_score = models.FloatField()
     language_max = models.FloatField(default=0)
     breakdown = models.JSONField(default=list, blank=True)
+    suggestions = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     class Meta:
         db_table = 'essay_attempts'
@@ -112,6 +113,7 @@ class EssayAttempt(models.Model):
 class SiteSettings(models.Model):
     """Singleton (always pk=1) holding site-wide toggles managed from /manage/."""
     registration_enabled = models.BooleanField(default=True)
+    google_signin_enabled = models.BooleanField(default=True)
     class Meta:
         db_table = 'site_settings'
     def __str__(self):

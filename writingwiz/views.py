@@ -111,16 +111,19 @@ def index(request):
 
 #Register Page
 def register(request):
-	registration_enabled = SiteSettings.load().registration_enabled
+	site_settings = SiteSettings.load()
+	registration_enabled = site_settings.registration_enabled
+	google_signin_enabled = site_settings.google_signin_enabled
 	if request.user.is_authenticated:
 		usr = request.session.get("username", "")
 		superuser = request.session.get("superuser", "")
-		return render(request, 'register.html', {'user': usr, 'superuser': superuser, 'registration_enabled': registration_enabled})
+		return render(request, 'register.html', {'user': usr, 'superuser': superuser, 'registration_enabled': registration_enabled, 'google_signin_enabled': google_signin_enabled})
 	else:
-		return render(request, 'register.html', {'user': "", 'superuser': "", 'registration_enabled': registration_enabled})
+		return render(request, 'register.html', {'user': "", 'superuser': "", 'registration_enabled': registration_enabled, 'google_signin_enabled': google_signin_enabled})
 
 #Login Page
 def login(request):
+	site_settings = SiteSettings.load()
 	if request.user.is_authenticated:
 		usr = request.session.get("username", "")
 		superuser = request.session.get("superuser", "")
@@ -129,6 +132,9 @@ def login(request):
 	next_url = request.GET.get('url', '/')
 	errors = []
 	username = ''
+
+	if request.GET.get('google_disabled'):
+		errors.append('Google Sign-In is currently disabled.')
 
 	if request.method == 'POST':
 		username = request.POST.get('username', '')
@@ -149,6 +155,7 @@ def login(request):
 		'errors': errors,
 		'username': username,
 		'next': next_url,
+		'google_signin_enabled': site_settings.google_signin_enabled,
 		'user': '',
 		'superuser': '',
 	})
@@ -215,6 +222,7 @@ def signup(request):
 				'password': request.POST['password'],
 				'cfmpassword': request.POST['cfmpassword'],
 				'user': "", 'superuser': "", 'registration_enabled': True,
+				'google_signin_enabled': SiteSettings.load().google_signin_enabled,
 			})
 	else:
 		return HttpResponseRedirect('/403/')
@@ -464,6 +472,7 @@ def essay_grader(request):
 			language_score=result['language_score'],
 			language_max=result['language_max'],
 			breakdown=result['breakdown'],
+			suggestions=result['suggestions'],
 		)
 	else:
 		qtype = request.GET.get('qtype', 'Continuous')
@@ -488,7 +497,6 @@ def essay_grader(request):
 
 	return render(request, 'essay_grader.html', {
 		'question': question,
-		'result': result,
 		'essay_text': essay_text,
 		'qtype': qtype,
 		'question_id': question_id,
