@@ -1,0 +1,7 @@
+{% if page_obj.paginator.num_pages > 1 %}
+<div class="manage-pagination">
+  {% if prev_url %}<a href="{{ prev_url }}" class="btn btn-default btn-sm">&laquo; Prev</a>{% endif %}
+  <span class="text-muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} ({{ page_obj.paginator.count }} total)</span>
+  {% if next_url %}<a href="{{ next_url }}" class="btn btn-default btn-sm">Next &raquo;</a>{% endif %}
+</div>
+{% endif %}

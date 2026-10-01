@@ -28,7 +28,7 @@ from django.conf import settings
 
 from .models import (
 	Greeting, Questions, ModelAns, Pictorial, LearningVideo, Vocabulary, Phrase,
-	EssayAttempt, Announcement, _next_question_id, _next_ans_id, _next_pic_id,
+	EssayAttempt, Announcement, SiteSettings, _next_question_id, _next_ans_id, _next_pic_id,
 )
 from .grading import grade_essay
 
@@ -111,12 +111,13 @@ def index(request):
 
 #Register Page
 def register(request):
+	registration_enabled = SiteSettings.load().registration_enabled
 	if request.user.is_authenticated:
 		usr = request.session.get("username", "")
-		superuser = request.session.get("superuser", "") 
-		return render(request, 'register.html', {'user': usr, 'superuser': superuser})
+		superuser = request.session.get("superuser", "")
+		return render(request, 'register.html', {'user': usr, 'superuser': superuser, 'registration_enabled': registration_enabled})
 	else:
-		return render(request, 'register.html', {'user': "", 'superuser': ""})
+		return render(request, 'register.html', {'user': "", 'superuser': "", 'registration_enabled': registration_enabled})
 
 #Login Page
 def login(request):
@@ -173,6 +174,17 @@ def forgotPwd(request):
 def signup(request):
 	errors = []
 	if request.method == 'POST':
+		if not SiteSettings.load().registration_enabled:
+			return render(request, 'register.html', {
+				'errors': ['Registration is currently closed.'],
+				'user': '', 'superuser': '', 'registration_enabled': False,
+			})
+		first_name = request.POST.get('first_name', '').strip()
+		last_name = request.POST.get('last_name', '').strip()
+		if not first_name:
+			errors.append('First name is empty.')
+		if not last_name:
+			errors.append('Last name is empty.')
 		if not request.POST.get('username'):
 			errors.append('Email address is empty.')
 		else:
@@ -188,12 +200,22 @@ def signup(request):
 			errors.append('Username already exists.')
 		if not errors:
 			user = User.objects.create_user(request.POST['username'], request.POST['username'], request.POST['password'])
+			user.first_name = first_name
+			user.last_name = last_name
 			user.is_active = True
 			user.save()
 			auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
 			return HttpResponseRedirect('/')
 		else:
-			return render(request, 'register.html', {'errors': errors, 'username': request.POST['username'], 'password': request.POST['password'], 'cfmpassword': request.POST['cfmpassword'], 'user': "", 'superuser': ""})
+			return render(request, 'register.html', {
+				'errors': errors,
+				'first_name': first_name,
+				'last_name': last_name,
+				'username': request.POST['username'],
+				'password': request.POST['password'],
+				'cfmpassword': request.POST['cfmpassword'],
+				'user': "", 'superuser': "", 'registration_enabled': True,
+			})
 	else:
 		return HttpResponseRedirect('/403/')
 
@@ -488,13 +510,21 @@ def profile(request):
 
 		if action == 'update_details':
 			new_email = request.POST.get('email', '').strip()
-			if not new_email or '@' not in new_email:
+			new_first_name = request.POST.get('first_name', '').strip()
+			new_last_name = request.POST.get('last_name', '').strip()
+			if not new_first_name:
+				errors.append('First name cannot be empty.')
+			elif not new_last_name:
+				errors.append('Last name cannot be empty.')
+			elif not new_email or '@' not in new_email:
 				errors.append('Please enter a valid email address.')
 			elif User.objects.filter(username=new_email).exclude(pk=user.pk).exists():
 				errors.append('That email is already in use.')
 			else:
 				user.email = new_email
 				user.username = new_email
+				user.first_name = new_first_name
+				user.last_name = new_last_name
 				user.save()
 				request.session['username'] = user.username
 				success = 'Your details have been updated.'
@@ -529,6 +559,8 @@ def profile(request):
 		'errors': errors,
 		'success': success,
 		'email': user.email,
+		'first_name': user.first_name,
+		'last_name': user.last_name,
 		'date_joined': user.date_joined,
 		'total_attempts': total_attempts,
 		'avg_percent': avg_percent,

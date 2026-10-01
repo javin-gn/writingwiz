@@ -1,9 +1,7 @@
 from django.urls import re_path, path, include
 
-from django.contrib import admin
-admin.autodiscover()
-
 import writingwiz.views
+import writingwiz.manage
 
 urlpatterns = [
     path('accounts/', include('allauth.urls')),
@@ -33,5 +31,11 @@ urlpatterns = [
     path('update_question/', writingwiz.views.update_question, name='update_question'),
     path('edit_answer/<int:ans_id>/', writingwiz.views.edit_answer_view, name='edit_answer'),
     path('update_answer/', writingwiz.views.update_answer, name='update_answer'),
-    path('admin/', admin.site.urls),
+    path('manage/', writingwiz.manage.dashboard, name='manage_dashboard'),
+    path('manage/announcements/', writingwiz.manage.announcements, name='manage_announcements'),
+    path('manage/accounts/', writingwiz.manage.accounts, name='manage_accounts'),
+    path('manage/vocabulary/', writingwiz.manage.vocabulary, name='manage_vocabulary'),
+    path('manage/videos/', writingwiz.manage.videos, name='manage_videos'),
+    path('manage/essays/', writingwiz.manage.essays, name='manage_essays'),
+    path('manage/questions/', writingwiz.manage.questions, name='manage_questions'),
 ]

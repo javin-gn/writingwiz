@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}
+	<title>A&#42; Composition - Manage Vivid Vocabulary</title>
+{% endblock %}
+
+{% block statics %}
+{% endblock %}
+
+{% block contents %}
+    <div class="container">
+         <div class="page-header" id="banner">
+           {% if superuser %}
+           <h1>Manage Vivid Vocabulary</h1>
+           {% include "manage_nav.html" %}
+
+           {% if errors %}
+           <div class="alert alert-dismissable alert-danger" style="margin-top: 20px;">
+             <button type="button" class="close" data-dismiss="alert">&times;</button>
+             <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+           </div>
+           {% endif %}
+           {% if success %}
+           <div class="alert alert-dismissable alert-success" style="margin-top: 20px;">
+             <button type="button" class="close" data-dismiss="alert">&times;</button>
+             {{ success }}
+           </div>
+           {% endif %}
+
+           <div class="row" style="margin-top: 20px;">
+             <div class="col-lg-6">
+               <div class="well">
+                 <h3>Vocabulary</h3>
+                 <form method="post" action="/manage/vocabulary/" class="form-inline" style="margin-bottom: 12px;">
+                   {% csrf_token %}
+                   <input type="hidden" name="kind" value="vocabulary">
+                   <input type="hidden" name="action" value="add">
+                   <input type="text" name="text" class="form-control" placeholder="Word or phrase" style="width: 100%; margin-bottom: 6px;">
+                   <input type="text" name="category" class="form-control" placeholder="Category" style="width: 48%; margin-bottom: 6px;">
+                   <input type="text" name="theme" class="form-control" placeholder="Theme (optional)" style="width: 48%; margin-bottom: 6px;">
+                   <button type="submit" class="btn btn-primary btn-sm">Add Word</button>
+                 </form>
+
+                 <table class="table table-bordered">
+                   <thead><tr><th>Word</th><th>Category</th><th>Theme</th><th></th></tr></thead>
+                   <tbody>
+                     {% for v in vocab_list %}
+                     <tr>
+                       <td>{{ v.vocabulary }}</td>
+                       <td colspan="3">
+                         <form method="post" action="/manage/vocabulary/" class="form-inline">
+                           {% csrf_token %}
+                           <input type="hidden" name="kind" value="vocabulary">
+                           <input type="hidden" name="action" value="update">
+                           <input type="hidden" name="pk" value="{{ v.vocabulary }}">
+                           <input type="text" name="category" class="form-control input-sm" value="{{ v.category }}" style="width: 30%;">
+                           <input type="text" name="theme" class="form-control input-sm" value="{{ v.theme }}" style="width: 30%;">
+                           <button type="submit" class="btn-link-action">Save</button>
+                         </form>
+                         <form method="post" action="/manage/vocabulary/" style="display:inline;">
+                           {% csrf_token %}
+                           <input type="hidden" name="kind" value="vocabulary">
+                           <input type="hidden" name="action" value="delete">
+                           <input type="hidden" name="pk" value="{{ v.vocabulary }}">
+                           <button type="submit" class="btn-link-action">Delete</button>
+                         </form>
+                       </td>
+                     </tr>
+                     {% empty %}
+                     <tr><td colspan="4" class="text-muted">No vocabulary yet.</td></tr>
+                     {% endfor %}
+                   </tbody>
+                 </table>
+                 {% include "manage_pagination.html" with page_obj=vocab_page_obj prev_url=vocab_prev_url next_url=vocab_next_url %}
+               </div>
+             </div>
+
+             <div class="col-lg-6">
+               <div class="well">
+                 <h3>Phrases</h3>
+                 <form method="post" action="/manage/vocabulary/" class="form-inline" style="margin-bottom: 12px;">
+                   {% csrf_token %}
+                   <input type="hidden" name="kind" value="phrase">
+                   <input type="hidden" name="action" value="add">
+                   <input type="text" name="text" class="form-control" placeholder="Phrase" style="width: 100%; margin-bottom: 6px;">
+                   <input type="text" name="category" class="form-control" placeholder="Category" style="width: 48%; margin-bottom: 6px;">
+                   <input type="text" name="theme" class="form-control" placeholder="Theme (optional)" style="width: 48%; margin-bottom: 6px;">
+                   <button type="submit" class="btn btn-primary btn-sm">Add Phrase</button>
+                 </form>
+
+                 <table class="table table-bordered">
+                   <thead><tr><th>Phrase</th><th>Category</th><th>Theme</th><th></th></tr></thead>
+                   <tbody>
+                     {% for p in phrase_list %}
+                     <tr>
+                       <td>{{ p.phrase }}</td>
+                       <td colspan="3">
+                         <form method="post" action="/manage/vocabulary/" class="form-inline">
+                           {% csrf_token %}
+                           <input type="hidden" name="kind" value="phrase">
+                           <input type="hidden" name="action" value="update">
+                           <input type="hidden" name="pk" value="{{ p.phrase }}">
+                           <input type="text" name="category" class="form-control input-sm" value="{{ p.category }}" style="width: 30%;">
+                           <input type="text" name="theme" class="form-control input-sm" value="{{ p.theme }}" style="width: 30%;">
+                           <button type="submit" class="btn-link-action">Save</button>
+                         </form>
+                         <form method="post" action="/manage/vocabulary/" style="display:inline;">
+                           {% csrf_token %}
+                           <input type="hidden" name="kind" value="phrase">
+                           <input type="hidden" name="action" value="delete">
+                           <input type="hidden" name="pk" value="{{ p.phrase }}">
+                           <button type="submit" class="btn-link-action">Delete</button>
+                         </form>
+                       </td>
+                     </tr>
+                     {% empty %}
+                     <tr><td colspan="4" class="text-muted">No phrases yet.</td></tr>
+                     {% endfor %}
+                   </tbody>
+                 </table>
+                 {% include "manage_pagination.html" with page_obj=phrase_page_obj prev_url=phrase_prev_url next_url=phrase_next_url %}
+               </div>
+             </div>
+           </div>
+           {% else %}
+           <h1>Error</h1>
+           <p>You are not allowed to view this page</p>
+           {% endif %}
+         </div>
+    </div>
+{% endblock %}

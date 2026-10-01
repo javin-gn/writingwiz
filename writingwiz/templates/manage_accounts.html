@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}
+	<title>A&#42; Composition - Manage Accounts</title>
+{% endblock %}
+
+{% block statics %}
+{% endblock %}
+
+{% block contents %}
+    <div class="container">
+         <div class="page-header" id="banner">
+           {% if superuser %}
+           <h1>Manage Accounts</h1>
+           {% include "manage_nav.html" %}
+
+           {% if errors %}
+           <div class="alert alert-dismissable alert-danger" style="margin-top: 20px;">
+             <button type="button" class="close" data-dismiss="alert">&times;</button>
+             <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+           </div>
+           {% endif %}
+           {% if success %}
+           <div class="alert alert-dismissable alert-success" style="margin-top: 20px;">
+             <button type="button" class="close" data-dismiss="alert">&times;</button>
+             {{ success }}
+           </div>
+           {% endif %}
+
+           <div class="well" style="margin-top: 20px;">
+             <h3>Registration</h3>
+             <p>New account sign-ups, including Google Sign-In, are currently <strong>{% if registration_enabled %}open{% else %}closed{% endif %}</strong>.</p>
+             <form method="post" action="/manage/accounts/">
+               {% csrf_token %}
+               <input type="hidden" name="action" value="toggle_registration">
+               <button type="submit" class="btn btn-primary btn-sm">{% if registration_enabled %}Close Registration{% else %}Open Registration{% endif %}</button>
+             </form>
+           </div>
+
+           <div class="well" style="margin-top: 20px;">
+             <table class="table table-bordered">
+               <thead><tr><th>Name</th><th>Username</th><th>Email</th><th>Essays Graded</th><th>Joined</th><th>Active</th><th>Admin</th><th></th></tr></thead>
+               <tbody>
+                 {% for acc in accounts %}
+                 <tr>
+                   <td>{% if acc.first_name or acc.last_name %}{{ acc.first_name }} {{ acc.last_name }}{% else %}<span class="text-muted">&ndash;</span>{% endif %}</td>
+                   <td>{{ acc.username }}</td>
+                   <td>{{ acc.email }}</td>
+                   <td>{{ acc.essay_count }}</td>
+                   <td>{{ acc.date_joined|date:"d M Y" }}</td>
+                   <td>{% if acc.is_active %}Yes{% else %}No{% endif %}</td>
+                   <td>{% if acc.is_superuser %}Yes{% else %}No{% endif %}</td>
+                   <td class="table-actions">
+                     {% if acc.pk == user_pk %}
+                     <span class="text-muted">(you)</span>
+                     {% else %}
+                     <form method="post" action="/manage/accounts/">
+                       {% csrf_token %}
+                       <input type="hidden" name="action" value="toggle_active">
+                       <input type="hidden" name="pk" value="{{ acc.pk }}">
+                       <button type="submit" class="btn-link-action">{% if acc.is_active %}Deactivate{% else %}Activate{% endif %}</button>
+                     </form>
+                     <form method="post" action="/manage/accounts/">
+                       {% csrf_token %}
+                       <input type="hidden" name="action" value="toggle_admin">
+                       <input type="hidden" name="pk" value="{{ acc.pk }}">
+                       <button type="submit" class="btn-link-action">{% if acc.is_superuser %}Remove Admin{% else %}Make Admin{% endif %}</button>
+                     </form>
+                     {% endif %}
+                   </td>
+                 </tr>
+                 {% empty %}
+                 <tr><td colspan="8" class="text-muted">No accounts yet.</td></tr>
+                 {% endfor %}
+               </tbody>
+             </table>
+             {% include "manage_pagination.html" %}
+           </div>
+           {% else %}
+           <h1>Error</h1>
+           <p>You are not allowed to view this page</p>
+           {% endif %}
+         </div>
+    </div>
+{% endblock %}

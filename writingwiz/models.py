@@ -109,6 +109,18 @@ class EssayAttempt(models.Model):
     def percent(self):
         return round(self.total_score / self.total_max * 100) if self.total_max else 0
 
+class SiteSettings(models.Model):
+    """Singleton (always pk=1) holding site-wide toggles managed from /manage/."""
+    registration_enabled = models.BooleanField(default=True)
+    class Meta:
+        db_table = 'site_settings'
+    def __str__(self):
+        return 'Site Settings'
+    @classmethod
+    def load(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
 class Announcement(models.Model):
     LEVEL_CHOICES = [
         ('info', 'Info'),

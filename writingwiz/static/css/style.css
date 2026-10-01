@@ -214,6 +214,82 @@ label {
 	margin: 4px 0 0;
 }
 
+/* ---- Custom admin (writingwiz/manage.py) ---- */
+.manage-nav {
+	margin-bottom: 10px;
+	flex-wrap: wrap;
+}
+.table-actions {
+	white-space: nowrap;
+}
+.table-actions form {
+	display: inline-block;
+}
+.btn-link-action {
+	background: none;
+	border: none;
+	padding: 0;
+	margin-left: 10px;
+	font: inherit;
+	color: var(--color-primary);
+	text-decoration: underline;
+	cursor: pointer;
+}
+.table-actions a:first-child,
+.table-actions form:first-of-type .btn-link-action {
+	margin-left: 0;
+}
+.btn-link-action:hover {
+	color: var(--color-primary-dark);
+}
+.manage-pagination {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-top: 16px;
+}
+
+/* ---- Auth pages (register) ---- */
+.auth-card {
+	max-width: 420px;
+	margin: 40px auto 0;
+	padding: 32px;
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+}
+.auth-card h1 {
+	margin-top: 0;
+	margin-bottom: 4px;
+	font-size: 28px;
+}
+.auth-card .form-group:last-of-type {
+	margin-bottom: 20px;
+}
+.form-row {
+	display: flex;
+	gap: 12px;
+}
+.form-row .form-group {
+	flex: 1;
+	min-width: 0;
+}
+.auth-divider {
+	text-align: center;
+	color: var(--color-muted);
+	margin: 16px 0;
+}
+.auth-switch {
+	text-align: center;
+	margin: 20px 0 0;
+	color: var(--color-muted);
+}
+.auth-forgot {
+	text-align: right;
+	margin: -8px 0 16px;
+	font-size: 13px;
+}
+
 /* ---- Tables ---- */
 .table {
 	background: var(--color-bg);

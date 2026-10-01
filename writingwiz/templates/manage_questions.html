@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}
+	<title>A&#42; Composition - Manage Questions</title>
+{% endblock %}
+
+{% block statics %}
+{% endblock %}
+
+{% block contents %}
+    <div class="container">
+         <div class="page-header" id="banner">
+           {% if superuser %}
+           <h1>Manage Questions</h1>
+           {% include "manage_nav.html" %}
+
+           {% if success %}
+           <div class="alert alert-dismissable alert-success" style="margin-top: 20px;">
+             <button type="button" class="close" data-dismiss="alert">&times;</button>
+             {{ success }}
+           </div>
+           {% endif %}
+
+           <div class="well" style="margin-top: 20px;">
+             <div class="form-group">
+               <a href="/manage/questions/" class="btn btn-default {% if not qtype_filter %}active{% endif %}">All ({{ continuous_count|add:situational_count }})</a>
+               <a href="/manage/questions/?type=Continuous" class="btn btn-default {% if qtype_filter == "Continuous" %}active{% endif %}">Continuous ({{ continuous_count }})</a>
+               <a href="/manage/questions/?type=Situational" class="btn btn-default {% if qtype_filter == "Situational" %}active{% endif %}">Situational ({{ situational_count }})</a>
+               <a href="/add_question/?type=Continuous" class="btn btn-primary" style="margin-left: 12px;">+ Add Continuous Question</a>
+               <a href="/add_question/?type=Situational" class="btn btn-primary">+ Add Situational Question</a>
+             </div>
+
+             <p class="badge-legend"><span class="question-category-badge">Category</span> <span class="question-theme-badge">Theme</span></p>
+
+             <div class="list-group">
+               {% for q in questions %}
+               <details class="list-group-item question-item">
+                 <summary class="question-summary">
+                   <span class="question-category-badge">{{ q.questionCategory }}</span>
+                   {% if q.theme %}<span class="question-theme-badge">{{ q.theme }}</span>{% endif %}
+                   <span class="question-preview">#{{ q.questionid }} - {{ q.question|truncatechars:80 }}</span>
+                 </summary>
+                 <div class="question-detail">
+                   <p class="question-text">{{ q.question|linebreaksbr }}</p>
+                   {% for pic in q.pictorial_set.all %}
+                     <img src="/static/pictures/{{ pic.url }}" class="question-picture" alt="">
+                   {% endfor %}
+                   <div class="question-actions">
+                     <a class="edit-link" href="/edit_question/{{ q.questionid }}/">Edit question</a>
+                     <form method="post" action="/manage/questions/" style="display:inline;">
+                       {% csrf_token %}
+                       <input type="hidden" name="action" value="delete">
+                       <input type="hidden" name="pk" value="{{ q.questionid }}">
+                       <button type="submit" class="btn-link-action">Delete question</button>
+                     </form>
+                   </div>
+                 </div>
+                 {% for ans in q.modelans_set.all %}
+                   <details class="answer-panel">
+                     <summary>Model Answer</summary>
+                     <div class="answer-body">
+                       <p>{{ ans.ans|linebreaksbr }}</p>
+                       <a class="edit-link" href="/edit_answer/{{ ans.ansid }}/">Edit this answer</a>
+                     </div>
+                   </details>
+                 {% empty %}
+                 <p class="text-muted" style="padding: 0 15px 10px;">No model answer yet.</p>
+                 {% endfor %}
+               </details>
+               {% empty %}
+               <p class="text-muted">No questions found.</p>
+               {% endfor %}
+             </div>
+             {% include "manage_pagination.html" %}
+           </div>
+           {% else %}
+           <h1>Error</h1>
+           <p>You are not allowed to view this page</p>
+           {% endif %}
+         </div>
+    </div>
+{% endblock %}

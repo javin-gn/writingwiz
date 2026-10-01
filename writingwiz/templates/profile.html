@@ -109,6 +109,16 @@ function hideAttemptDetails(id) {
                  <form method="post" action="/profile/">
                    {% csrf_token %}
                    <input type="hidden" name="action" value="update_details">
+                   <div class="form-row">
+                     <div class="form-group">
+                       <label for="first_name">First Name</label>
+                       <input type="text" class="form-control" id="first_name" name="first_name" value="{{ first_name }}">
+                     </div>
+                     <div class="form-group">
+                       <label for="last_name">Last Name</label>
+                       <input type="text" class="form-control" id="last_name" name="last_name" value="{{ last_name }}">
+                     </div>
+                   </div>
                    <div class="form-group">
                      <label for="email">Email</label>
                      <input type="text" class="form-control" id="email" name="email" value="{{ email }}">

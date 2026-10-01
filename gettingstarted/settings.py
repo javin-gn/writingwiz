@@ -48,7 +48,6 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -96,6 +95,11 @@ SOCIALACCOUNT_PROVIDERS = {
 SOCIALACCOUNT_LOGIN_ON_GET = True
 SOCIALACCOUNT_STORE_TOKENS = False
 LOGIN_REDIRECT_URL = '/'
+
+# Both gate on SiteSettings.registration_enabled, toggled from /manage/accounts/,
+# so an admin can close new sign-ups (including via Google) without touching code.
+ACCOUNT_ADAPTER = 'writingwiz.adapters.AccountAdapter'
+SOCIALACCOUNT_ADAPTER = 'writingwiz.adapters.SocialAccountAdapter'
 
 ROOT_URLCONF = 'gettingstarted.urls'
 

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}
+	<title>A&#42; Composition - Manage Essay Marks</title>
+{% endblock %}
+
+{% block statics %}
+<script type="text/javascript">
+// Swap the attempts summary table for a full-width breakdown panel, rather
+// than nesting the breakdown table inside a narrow table cell.
+function showAttemptDetails(id) {
+	var summary = document.getElementById('attemptsSummaryPanel');
+	if (summary) { summary.style.display = 'none'; }
+	document.querySelectorAll('.attempt-details-panel').forEach(function (el) { el.style.display = 'none'; });
+	var panel = document.getElementById('attemptDetailsPanel' + id);
+	if (panel) { panel.style.display = 'block'; }
+}
+
+function hideAttemptDetails(id) {
+	var panel = document.getElementById('attemptDetailsPanel' + id);
+	if (panel) { panel.style.display = 'none'; }
+	var summary = document.getElementById('attemptsSummaryPanel');
+	if (summary) { summary.style.display = 'block'; }
+}
+</script>
+{% endblock %}
+
+{% block contents %}
+    <div class="container">
+         <div class="page-header" id="banner">
+           {% if superuser %}
+           <h1>Manage Essay Marks</h1>
+           {% include "manage_nav.html" %}
+
+           {% if success %}
+           <div class="alert alert-dismissable alert-success" style="margin-top: 20px;">
+             <button type="button" class="close" data-dismiss="alert">&times;</button>
+             {{ success }}
+           </div>
+           {% endif %}
+
+           <div class="well" style="margin-top: 20px;">
+             <p class="text-muted">{{ total_count }} total attempt{{ total_count|pluralize }}.</p>
+
+             <div id="attemptsSummaryPanel">
+               <table class="table table-bordered">
+                 <thead><tr><th>Date</th><th>User</th><th>Question</th><th>Content</th><th>Language</th><th>Total</th><th>%</th><th></th><th></th></tr></thead>
+                 <tbody>
+                   {% for a in attempts %}
+                   <tr>
+                     <td>{{ a.created_at|date:"d M Y, H:i" }}</td>
+                     <td>{{ a.user.username }}</td>
+                     <td>{% if a.question %}{{ a.question.questionCategory }} - {{ a.question.question|truncatechars:40 }}{% else %}-{% endif %}</td>
+                     <td>{{ a.content_score }} / {{ a.content_max }}</td>
+                     <td>{{ a.language_score }} / {{ a.language_max }}</td>
+                     <td>{{ a.total_score }} / {{ a.total_max }}</td>
+                     <td>{{ a.percent }}%</td>
+                     <td>{% if a.breakdown %}<a href="#" onclick="showAttemptDetails({{ a.id }}); return false;">Details</a>{% endif %}</td>
+                     <td>
+                       <form method="post" action="/manage/essays/">
+                         {% csrf_token %}
+                         <input type="hidden" name="action" value="delete">
+                         <input type="hidden" name="pk" value="{{ a.id }}">
+                         <button type="submit" class="btn-link-action">Delete</button>
+                       </form>
+                     </td>
+                   </tr>
+                   {% empty %}
+                   <tr><td colspan="9" class="text-muted">No essays graded yet.</td></tr>
+                   {% endfor %}
+                 </tbody>
+               </table>
+               {% include "manage_pagination.html" %}
+             </div>
+
+             {% for a in attempts %}
+             {% if a.breakdown %}
+             <div id="attemptDetailsPanel{{ a.id }}" class="attempt-details-panel" style="display: none;">
+               <p style="margin-top: 8px;"><a href="#" onclick="hideAttemptDetails({{ a.id }}); return false;">&larr; Back to attempts</a></p>
+               <p class="text-muted">{{ a.user.username }} &middot; {{ a.created_at|date:"d M Y, H:i" }} &middot; {{ a.total_score }} / {{ a.total_max }} ({{ a.percent }}%)</p>
+               <table class="table table-bordered">
+                 <thead><tr><th>Criterion</th><th>Score</th><th>Notes</th></tr></thead>
+                 <tbody>
+                   {% for b in a.breakdown %}
+                   <tr>
+                     <td>{{ b.label }}</td>
+                     <td>{{ b.score }} / {{ b.max }}</td>
+                     <td>{{ b.note }}</td>
+                   </tr>
+                   {% endfor %}
+                 </tbody>
+               </table>
+             </div>
+             {% endif %}
+             {% endfor %}
+           </div>
+           {% else %}
+           <h1>Error</h1>
+           <p>You are not allowed to view this page</p>
+           {% endif %}
+         </div>
+    </div>
+{% endblock %}

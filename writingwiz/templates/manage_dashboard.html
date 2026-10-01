@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}
+	<title>A&#42; Composition - Manage Site</title>
+{% endblock %}
+
+{% block statics %}
+{% endblock %}
+
+{% block contents %}
+    <div class="container">
+         <div class="page-header" id="banner">
+           {% if superuser %}
+           <h1>Manage Site</h1>
+           {% include "manage_nav.html" %}
+
+           <div class="row" style="margin-top: 20px;">
+             <div class="col-lg-4">
+               <div class="well">
+                 <h3>Questions</h3>
+                 <p>{{ question_count }} total</p>
+                 <a href="/manage/questions/" class="btn btn-default btn-sm">Manage</a>
+               </div>
+             </div>
+             <div class="col-lg-4">
+               <div class="well">
+                 <h3>Announcements</h3>
+                 <p>{{ announcement_count }} total</p>
+                 <a href="/manage/announcements/" class="btn btn-default btn-sm">Manage</a>
+               </div>
+             </div>
+             <div class="col-lg-4">
+               <div class="well">
+                 <h3>Accounts</h3>
+                 <p>{{ account_count }} total</p>
+                 <a href="/manage/accounts/" class="btn btn-default btn-sm">Manage</a>
+               </div>
+             </div>
+             <div class="col-lg-4">
+               <div class="well">
+                 <h3>Vivid Vocabulary</h3>
+                 <p>{{ vocabulary_count }} words, {{ phrase_count }} phrases</p>
+                 <a href="/manage/vocabulary/" class="btn btn-default btn-sm">Manage</a>
+               </div>
+             </div>
+             <div class="col-lg-4">
+               <div class="well">
+                 <h3>Learning Videos</h3>
+                 <p>{{ video_count }} total</p>
+                 <a href="/manage/videos/" class="btn btn-default btn-sm">Manage</a>
+               </div>
+             </div>
+             <div class="col-lg-4">
+               <div class="well">
+                 <h3>Essay Marks</h3>
+                 <p>{{ essay_count }} attempts graded</p>
+                 <a href="/manage/essays/" class="btn btn-default btn-sm">Manage</a>
+               </div>
+             </div>
+           </div>
+           {% else %}
+           <h1>Error</h1>
+           <p>You are not allowed to view this page</p>
+           {% endif %}
+         </div>
+    </div>
+{% endblock %}
