@@ -438,7 +438,10 @@ def essay_grader(request):
 			total_score=result['total_score'],
 			total_max=result['total_max'],
 			content_score=result['content_score'],
+			content_max=result['content_max'],
 			language_score=result['language_score'],
+			language_max=result['language_max'],
+			breakdown=result['breakdown'],
 		)
 	else:
 		qtype = request.GET.get('qtype', 'Continuous')

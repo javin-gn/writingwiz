@@ -5,6 +5,24 @@
 {% endblock %}
 
 {% block statics %}
+<script type="text/javascript">
+// Swap the attempts summary table for a full-width breakdown panel, rather
+// than nesting the breakdown table inside a narrow table cell.
+function showAttemptDetails(id) {
+	var summary = document.getElementById('attemptsSummaryPanel');
+	if (summary) { summary.style.display = 'none'; }
+	document.querySelectorAll('.attempt-details-panel').forEach(function (el) { el.style.display = 'none'; });
+	var panel = document.getElementById('attemptDetailsPanel' + id);
+	if (panel) { panel.style.display = 'block'; }
+}
+
+function hideAttemptDetails(id) {
+	var panel = document.getElementById('attemptDetailsPanel' + id);
+	if (panel) { panel.style.display = 'none'; }
+	var summary = document.getElementById('attemptsSummaryPanel');
+	if (summary) { summary.style.display = 'block'; }
+}
+</script>
 {% endblock %}
 
 {% block contents %}
@@ -40,19 +58,47 @@
                {% if recent_attempts %}
                <div class="well">
                  <h3>Recent Attempts</h3>
-                 <table class="table table-bordered">
-                   <thead><tr><th>Date</th><th>Question</th><th>Score</th><th></th></tr></thead>
-                   <tbody>
-                     {% for a in recent_attempts %}
-                     <tr>
-                       <td>{{ a.created_at|date:"d M Y, H:i" }}</td>
-                       <td>{% if a.question %}{{ a.question.questionCategory }} - {{ a.question.question|truncatechars:40 }}{% else %}-{% endif %}</td>
-                       <td>{{ a.total_score }} / {{ a.total_max }} ({{ a.percent }}%)</td>
-                       <td>{% if a.question %}<a href="/grader/?question_id={{ a.question.questionid }}">Retry</a>{% endif %}</td>
-                     </tr>
-                     {% endfor %}
-                   </tbody>
-                 </table>
+
+                 <div id="attemptsSummaryPanel">
+                   <table class="table table-bordered">
+                     <thead><tr><th>Date</th><th>Question</th><th>Content</th><th>Language</th><th>Total</th><th>%</th><th></th><th></th></tr></thead>
+                     <tbody>
+                       {% for a in recent_attempts %}
+                       <tr>
+                         <td>{{ a.created_at|date:"d M Y, H:i" }}</td>
+                         <td>{% if a.question %}{{ a.question.questionCategory }} - {{ a.question.question|truncatechars:40 }}{% else %}-{% endif %}</td>
+                         <td>{{ a.content_score }} / {{ a.content_max }}</td>
+                         <td>{{ a.language_score }} / {{ a.language_max }}</td>
+                         <td>{{ a.total_score }} / {{ a.total_max }}</td>
+                         <td>{{ a.percent }}%</td>
+                         <td>{% if a.breakdown %}<a href="#" onclick="showAttemptDetails({{ a.id }}); return false;">Details</a>{% endif %}</td>
+                         <td>{% if a.question %}<a href="/grader/?question_id={{ a.question.questionid }}">Retry</a>{% endif %}</td>
+                       </tr>
+                       {% endfor %}
+                     </tbody>
+                   </table>
+                 </div>
+
+                 {% for a in recent_attempts %}
+                 {% if a.breakdown %}
+                 <div id="attemptDetailsPanel{{ a.id }}" class="attempt-details-panel" style="display: none;">
+                   <p style="margin-top: 8px;"><a href="#" onclick="hideAttemptDetails({{ a.id }}); return false;">&larr; Back to attempts</a></p>
+                   <p class="text-muted">{{ a.created_at|date:"d M Y, H:i" }} &middot; {{ a.total_score }} / {{ a.total_max }} ({{ a.percent }}%)</p>
+                   <table class="table table-bordered">
+                     <thead><tr><th>Criterion</th><th>Score</th><th>Notes</th></tr></thead>
+                     <tbody>
+                       {% for b in a.breakdown %}
+                       <tr>
+                         <td>{{ b.label }}</td>
+                         <td>{{ b.score }} / {{ b.max }}</td>
+                         <td>{{ b.note }}</td>
+                       </tr>
+                       {% endfor %}
+                     </tbody>
+                   </table>
+                 </div>
+                 {% endif %}
+                 {% endfor %}
                </div>
                {% endif %}
              </div>

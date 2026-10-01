@@ -95,7 +95,10 @@ class EssayAttempt(models.Model):
     total_score = models.FloatField()
     total_max = models.FloatField()
     content_score = models.FloatField()
+    content_max = models.FloatField(default=0)
     language_score = models.FloatField()
+    language_max = models.FloatField(default=0)
+    breakdown = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     class Meta:
         db_table = 'essay_attempts'
