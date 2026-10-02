@@ -421,18 +421,8 @@ def vp(request):
 def leaderboard(request):
 	usr, superuser = _session_user(request)
 
-	categories = (
-		VividVocabularyUsage.objects.exclude(category='')
-		.values_list('category', flat=True).distinct().order_by('category')
-	)
-
-	selected_category = request.GET.get('category', '')
-	qs = VividVocabularyUsage.objects.all()
-	if selected_category:
-		qs = qs.filter(category=selected_category)
-
 	rankings = (
-		qs.values('user_id', 'user__first_name', 'user__last_name', 'user__username')
+		VividVocabularyUsage.objects.values('user_id', 'user__first_name', 'user__last_name', 'user__username')
 		.annotate(count=Count('id'))
 		.order_by('-count')[:50]
 	)
@@ -440,8 +430,6 @@ def leaderboard(request):
 	return render(request, 'leaderboard.html', {
 		'user': usr,
 		'superuser': superuser,
-		'categories': categories,
-		'selected_category': selected_category,
 		'rankings': rankings,
 		'current_user_id': request.user.id,
 	})
@@ -650,11 +638,16 @@ def dashboard(request):
 			situational_avg = round(sum(situational_percents) / len(situational_percents))
 
 	vivid_usage = VividVocabularyUsage.objects.filter(user=user)
-	vivid_total = vivid_usage.count()
-	vivid_by_category = (
-		vivid_usage.exclude(category='').values('category')
-		.annotate(count=Count('id')).order_by('-count')[:5]
-	)
+	vivid_total = vivid_usage.values('text').distinct().count()
+	# Dedup in Python rather than .distinct() - a DISTINCT + ORDER BY on a
+	# column outside the SELECT list (created_at isn't selected here) is
+	# rejected by Postgres even though sqlite tolerates it.
+	vivid_recent_words = []
+	for text in vivid_usage.order_by('-created_at').values_list('text', flat=True)[:200]:
+		if text not in vivid_recent_words:
+			vivid_recent_words.append(text)
+		if len(vivid_recent_words) >= 10:
+			break
 
 	usr, superuser = _session_user(request)
 	return render(request, 'dashboard.html', {
@@ -667,7 +660,7 @@ def dashboard(request):
 		'situational_avg': situational_avg,
 		'recent_attempts': attempts[:15],
 		'vivid_total': vivid_total,
-		'vivid_by_category': vivid_by_category,
+		'vivid_recent_words': vivid_recent_words,
 		'user': usr,
 		'superuser': superuser,
 	})

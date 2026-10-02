@@ -11,19 +11,12 @@
     <div class="container">
          <div class="page-header" id="banner">
            <h1>Vivid Vocabulary Leaderboard</h1>
-           <p class="text-muted">Ranked by how many distinct vivid vocabulary and phrase bank entries you've used across your graded essays. Using the same word repeatedly in one essay only counts once - this rewards variety, not repetition.</p>
-
-           <div class="form-group">
-             <a href="/leaderboard/" class="btn btn-default {% if not selected_category %}active{% endif %}">All Categories</a>
-             {% for c in categories %}
-               <a href="/leaderboard/?category={{ c }}" class="btn btn-default {% if selected_category == c %}active{% endif %}">{{ c }}</a>
-             {% endfor %}
-           </div>
+           <p class="text-muted">Ranked by how many distinct vivid words and phrases you've used across your graded essays, learned from model answers and high-scoring student essays rather than a fixed list. Using the same word or phrase repeatedly in one essay only counts once - this rewards variety, not repetition.</p>
 
            <div class="well">
              {% if rankings %}
              <table class="table table-bordered">
-               <thead><tr><th>Rank</th><th>Student</th><th>Vivid Words Used</th></tr></thead>
+               <thead><tr><th>Rank</th><th>Student</th><th>Vivid Words/Phrases Used</th></tr></thead>
                <tbody>
                  {% for r in rankings %}
                  <tr{% if r.user_id == current_user_id %} style="font-weight: bold; background: var(--color-surface);"{% endif %}>
@@ -38,7 +31,7 @@
                </tbody>
              </table>
              {% else %}
-             <p class="text-muted">No vivid vocabulary detected yet{% if selected_category %} in the "{{ selected_category }}" category{% endif %}. Grade an essay using words or phrases from the <a href="/vp/">Vivid Vocabulary Listing</a> to appear here.</p>
+             <p class="text-muted">No vivid vocabulary detected yet. Grade an essay at the <a href="/grader/">Essay Grader</a> to appear here.</p>
              {% endif %}
            </div>
          </div>

@@ -63,9 +63,9 @@ function hideAttemptDetails(id) {
            <div class="well">
              <h3>Vivid Vocabulary</h3>
              <p><strong>{{ vivid_total }}</strong> distinct vivid word{{ vivid_total|pluralize }}/phrase{{ vivid_total|pluralize }} used across your essays. <a href="/leaderboard/">View the leaderboard &rarr;</a></p>
-             {% if vivid_by_category %}
+             {% if vivid_recent_words %}
              <p class="badge-legend">
-               {% for c in vivid_by_category %}<span class="question-theme-badge">{{ c.category }} &middot; {{ c.count }}</span> {% endfor %}
+               {% for w in vivid_recent_words %}<span class="question-theme-badge">{{ w }}</span> {% endfor %}
              </p>
              {% endif %}
            </div>

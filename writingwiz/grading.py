@@ -21,8 +21,8 @@ import re
 
 from spellchecker import SpellChecker
 
-from .models import Vocabulary, Phrase
 from .classifier import classify_essay
+from .vivid_vocabulary import get_vivid_words, get_vivid_phrases
 
 MAX_MARKS = {
     'Continuous': {'content': 15, 'language': 25},
@@ -222,26 +222,33 @@ def _score_vocabulary(words, essay_text):
     unique_ratio = len(set(w.lower() for w in words)) / len(words)
     ttr_score = min(1.0, unique_ratio / 0.5)
 
-    essay_lower = essay_text.lower()
-    vivid_hits = [
-        {'text': v, 'category': cat, 'kind': 'vocabulary'}
-        for v, cat in Vocabulary.objects.values_list('vocabulary', 'category')
-        if re.search(r'\b' + re.escape(v.lower()) + r'\b', essay_lower)
-    ]
-    phrase_hits = [
-        {'text': p, 'category': cat, 'kind': 'phrase'}
-        for p, cat in Phrase.objects.values_list('phrase', 'category')
-        if p.lower() in essay_lower
-    ]
-    all_hits = vivid_hits + phrase_hits
-    bonus = min(0.3, 0.03 * len(all_hits))
+    # Detection is learned from the corpus (model answers + high-scoring
+    # essays), not matched against the curated Vocabulary/Phrase bank - see
+    # vivid_vocabulary.py. No per-word category is available from this
+    # approach, unlike the old bank-lookup version.
+    vivid_vocab = get_vivid_words()
+    essay_word_set = {re.sub(r'[^a-z]', '', w.lower()) for w in words}
+    word_hits = sorted(essay_word_set & vivid_vocab)
+
+    # Phrases are multi-word, so set-membership doesn't work - check for
+    # each learned phrase as a space-padded substring of the essay's own
+    # word stream (padding guards against partial-word matches at the edges).
+    vivid_phrases = get_vivid_phrases()
+    normalized_text = ' '.join(re.findall(r'[a-z]+', essay_text.lower()))
+    padded_text = f' {normalized_text} '
+    phrase_hits = sorted(p for p in vivid_phrases if f' {p} ' in padded_text)
+
+    vivid_hits = [{'text': w, 'category': '', 'kind': 'vocabulary'} for w in word_hits]
+    vivid_hits += [{'text': p, 'category': '', 'kind': 'phrase'} for p in phrase_hits]
+
+    bonus = min(0.3, 0.03 * len(vivid_hits))
     fraction = min(1.0, ttr_score * 0.8 + bonus)
 
     note = f'Vocabulary variety score {unique_ratio:.2f} (unique/total words).'
-    if all_hits:
-        sample = [h['text'] for h in all_hits][:8]
-        note += f' Used {len(all_hits)} vivid vocabulary/phrase bank word(s): {", ".join(sample)}.'
-    return fraction, note, all_hits
+    if vivid_hits:
+        sample = [h['text'] for h in vivid_hits][:8]
+        note += f' Used {len(vivid_hits)} vivid vocabulary word(s)/phrase(s) (learned from model answers and high-scoring essays): {", ".join(sample)}.'
+    return fraction, note, vivid_hits
 
 
 def _score_sentence_variety(sentences):
