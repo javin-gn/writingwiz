@@ -3,7 +3,7 @@ from django.template.loader import get_template
 from django.template import Context
 from django.http import HttpResponse
 from django.db import connection
-from django.db.models import Count
+from django.db.models import Count, Prefetch
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.contrib.auth.models import User
@@ -28,7 +28,8 @@ from django.conf import settings
 
 from .models import (
 	Greeting, Questions, ModelAns, Pictorial, LearningVideo, Vocabulary, Phrase,
-	EssayAttempt, Announcement, SiteSettings, _next_question_id, _next_ans_id, _next_pic_id,
+	EssayAttempt, Announcement, SiteSettings, VividVocabularyUsage,
+	_next_question_id, _next_ans_id, _next_pic_id,
 )
 from .grading import grade_essay
 
@@ -129,7 +130,10 @@ def login(request):
 		superuser = request.session.get("superuser", "")
 		return render(request, 'login.html', {'user': usr, 'superuser': superuser})
 
-	next_url = request.GET.get('url', '/')
+	# Empty (not '/') when the login page was reached directly rather than
+	# via a redirect from a protected page - lets a successful login below
+	# fall through to the role-based dashboard instead of forcing '/'.
+	next_url = request.GET.get('url') or ''
 	errors = []
 	username = ''
 
@@ -145,7 +149,13 @@ def login(request):
 			auth_login(request, user)
 			request.session['username'] = user.username
 			request.session['superuser'] = user.is_superuser
-			return HttpResponseRedirect(next_url or '/')
+			if next_url:
+				redirect_to = next_url
+			elif user.is_superuser:
+				redirect_to = '/manage/'
+			else:
+				redirect_to = '/dashboard/'
+			return HttpResponseRedirect(redirect_to)
 		elif User.objects.filter(username=username, is_active=False).exists():
 			errors.append('This account has been deactivated.')
 		else:
@@ -212,7 +222,7 @@ def signup(request):
 			user.is_active = True
 			user.save()
 			auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-			return HttpResponseRedirect('/')
+			return HttpResponseRedirect('/dashboard/')
 		else:
 			return render(request, 'register.html', {
 				'errors': errors,
@@ -405,6 +415,37 @@ def vp(request):
 		'superuser': superuser,
 	})
 
+#Vivid Vocabulary Leaderboard - ranks students by distinct vivid vocabulary/
+#phrase bank entries detected in their graded essays, per category
+@login_required_view
+def leaderboard(request):
+	usr, superuser = _session_user(request)
+
+	categories = (
+		VividVocabularyUsage.objects.exclude(category='')
+		.values_list('category', flat=True).distinct().order_by('category')
+	)
+
+	selected_category = request.GET.get('category', '')
+	qs = VividVocabularyUsage.objects.all()
+	if selected_category:
+		qs = qs.filter(category=selected_category)
+
+	rankings = (
+		qs.values('user_id', 'user__first_name', 'user__last_name', 'user__username')
+		.annotate(count=Count('id'))
+		.order_by('-count')[:50]
+	)
+
+	return render(request, 'leaderboard.html', {
+		'user': usr,
+		'superuser': superuser,
+		'categories': categories,
+		'selected_category': selected_category,
+		'rankings': rankings,
+		'current_user_id': request.user.id,
+	})
+
 _THEME_FILLER_WORDS = {'and', '&', 'the', 'of'}
 
 def _theme_words(theme):
@@ -460,7 +501,7 @@ def essay_grader(request):
 
 		result = grade_essay(essay_text, qtype=qtype, question_text=question_text)
 
-		EssayAttempt.objects.create(
+		attempt = EssayAttempt.objects.create(
 			user=request.user,
 			question=question,
 			qtype=qtype,
@@ -474,6 +515,16 @@ def essay_grader(request):
 			breakdown=result['breakdown'],
 			suggestions=result['suggestions'],
 		)
+		VividVocabularyUsage.objects.bulk_create([
+			VividVocabularyUsage(
+				user=request.user,
+				attempt=attempt,
+				kind=hit['kind'],
+				text=hit['text'],
+				category=hit['category'],
+			)
+			for hit in result['vivid_hits']
+		])
 	else:
 		qtype = request.GET.get('qtype', 'Continuous')
 		if qtype not in QUESTION_TYPES:
@@ -553,15 +604,6 @@ def profile(request):
 				update_session_auth_hash(request, user)  # keep the user logged in
 				success = 'Your password has been updated.'
 
-	attempts = EssayAttempt.objects.filter(user=user)
-	total_attempts = attempts.count()
-	avg_percent = None
-	best_percent = None
-	if total_attempts:
-		percents = [a.percent for a in attempts]
-		avg_percent = round(sum(percents) / len(percents))
-		best_percent = max(percents)
-
 	usr, superuser = _session_user(request)
 	return render(request, 'profile.html', {
 		'errors': errors,
@@ -570,10 +612,62 @@ def profile(request):
 		'first_name': user.first_name,
 		'last_name': user.last_name,
 		'date_joined': user.date_joined,
+		'user': usr,
+		'superuser': superuser,
+	})
+
+#Student dashboard - progress and score overview, landing page after a non-admin login
+@login_required_view
+def dashboard(request):
+	user = request.user
+	attempts = EssayAttempt.objects.filter(user=user)
+	total_attempts = attempts.count()
+
+	avg_percent = None
+	best_percent = None
+	avg_content_percent = None
+	avg_language_percent = None
+	continuous_avg = None
+	situational_avg = None
+
+	if total_attempts:
+		percents = [a.percent for a in attempts]
+		avg_percent = round(sum(percents) / len(percents))
+		best_percent = max(percents)
+
+		content_percents = [a.content_percent for a in attempts if a.content_max]
+		language_percents = [a.language_percent for a in attempts if a.language_max]
+		if content_percents:
+			avg_content_percent = round(sum(content_percents) / len(content_percents))
+		if language_percents:
+			avg_language_percent = round(sum(language_percents) / len(language_percents))
+
+		continuous_percents = [a.percent for a in attempts if a.qtype == 'Continuous']
+		situational_percents = [a.percent for a in attempts if a.qtype == 'Situational']
+		if continuous_percents:
+			continuous_avg = round(sum(continuous_percents) / len(continuous_percents))
+		if situational_percents:
+			situational_avg = round(sum(situational_percents) / len(situational_percents))
+
+	vivid_usage = VividVocabularyUsage.objects.filter(user=user)
+	vivid_total = vivid_usage.count()
+	vivid_by_category = (
+		vivid_usage.exclude(category='').values('category')
+		.annotate(count=Count('id')).order_by('-count')[:5]
+	)
+
+	usr, superuser = _session_user(request)
+	return render(request, 'dashboard.html', {
 		'total_attempts': total_attempts,
 		'avg_percent': avg_percent,
 		'best_percent': best_percent,
+		'avg_content_percent': avg_content_percent,
+		'avg_language_percent': avg_language_percent,
+		'continuous_avg': continuous_avg,
+		'situational_avg': situational_avg,
 		'recent_attempts': attempts[:15],
+		'vivid_total': vivid_total,
+		'vivid_by_category': vivid_by_category,
 		'user': usr,
 		'superuser': superuser,
 	})
@@ -593,10 +687,14 @@ def questions_browse(request):
 	if theme:
 		questions = questions.filter(theme=theme)
 	# Without this, questions_fragment.html's per-question pictorial_set.all /
-	# modelans_set.all loops each fire their own query - prefetch collapses
-	# that N+1 into 2 extra queries total, which matters a lot once DATABASE_URL
-	# points at a remote Postgres instance instead of local sqlite.
-	questions = questions.order_by('questionid').prefetch_related('pictorial_set', 'modelans_set')
+	# modelans_set.all / essay_attempts.all loops each fire their own query -
+	# prefetch collapses that N+1 into a handful of queries total, which
+	# matters a lot once DATABASE_URL points at a remote Postgres instance
+	# instead of local sqlite.
+	questions = questions.order_by('questionid').prefetch_related(
+		'pictorial_set', 'modelans_set',
+		Prefetch('essay_attempts', queryset=EssayAttempt.objects.select_related('user')),
+	)
 
 	return render(request, 'questions_fragment.html', {
 		'questions': questions,

@@ -166,6 +166,14 @@ document.addEventListener('DOMContentLoaded', function () {
                    <p>Content: {{ latest.content_score }} / {{ latest.content_max }} &nbsp; | &nbsp; Language: {{ latest.language_score }} / {{ latest.language_max }}</p>
                  </div>
 
+                 {% if latest.vivid_vocabulary_usages.all %}
+                 <div class="alert alert-info">
+                   <strong>Vivid vocabulary detected ({{ latest.vivid_vocabulary_usages.all|length }}):</strong>
+                   <p class="text-muted" style="margin: 4px 0 8px;">Counted towards your <a href="/leaderboard/">Vivid Vocabulary Leaderboard</a> ranking.</p>
+                   {% for v in latest.vivid_vocabulary_usages.all %}<span class="question-theme-badge">{{ v.text }}</span> {% endfor %}
+                 </div>
+                 {% endif %}
+
                  {% if latest.suggestions %}
                  <div class="alert alert-info">
                    <strong>Suggestions:</strong>
@@ -223,6 +231,10 @@ document.addEventListener('DOMContentLoaded', function () {
                  <div id="attemptDetailsPanel{{ a.id }}" class="attempt-details-panel" style="display: none;">
                    <p style="margin-top: 8px;"><a href="#" onclick="hideAttemptDetails({{ a.id }}); return false;">&larr; Back to attempts</a></p>
                    <p class="text-muted">{{ a.created_at|date:"d M Y, H:i" }} &middot; {{ a.total_score }} / {{ a.total_max }} ({{ a.percent }}%)</p>
+                   <div class="well">
+                     <strong>Your Essay</strong>
+                     <p class="question-text" style="margin-top: 8px;">{{ a.essay_text|linebreaksbr }}</p>
+                   </div>
                    {% if a.suggestions %}
                    <div class="alert alert-info">
                      <strong>Suggestions:</strong>

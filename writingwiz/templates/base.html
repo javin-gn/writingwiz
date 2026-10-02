@@ -37,6 +37,7 @@
    	         <ul class="dropdown-menu">
       	         <li><a href="/videolist/">Learning Videos</a></li>
 				 <li><a href="/vp/">Vivid Vocabulary Listing</a></li>
+				 <li><a href="/leaderboard/">Vivid Vocabulary Leaderboard</a></li>
 				 <li><a href="/guides/">Step-by-step Guides</a></li>
 				 <li><a href="/grader/">Essay Grader</a></li>
    	         </ul>
@@ -48,6 +49,9 @@
 	      </ul>
 	      <ul class="nav navbar-nav navbar-right">
 			  {% if user %}
+			  {% if not superuser %}
+			  <li><a href="/dashboard/">Dashboard</a></li>
+			  {% endif %}
 			  <li><a href="/profile/">{{ user }}</a></li>
 			  <li><a href="/logout">Logout</a></li>
 			  {% else %}

@@ -25,6 +25,14 @@
         </div>
       </details>
     {% endfor %}
+    {% for attempt in q.essay_attempts.all %}
+      <details class="answer-panel">
+        <summary>User Submitted Essay &middot; {% if attempt.user.first_name %}{{ attempt.user.first_name }}{% else %}A student{% endif %} &middot; {{ attempt.percent }}%</summary>
+        <div class="answer-body">
+          <p>{{ attempt.essay_text|linebreaksbr }}</p>
+        </div>
+      </details>
+    {% endfor %}
   </details>
   {% endfor %}
 </div>

@@ -218,27 +218,30 @@ def _score_mechanics(sentences):
 
 def _score_vocabulary(words, essay_text):
     if not words:
-        return 0.0, 'No words to assess.'
+        return 0.0, 'No words to assess.', []
     unique_ratio = len(set(w.lower() for w in words)) / len(words)
     ttr_score = min(1.0, unique_ratio / 0.5)
 
     essay_lower = essay_text.lower()
     vivid_hits = [
-        v for v in Vocabulary.objects.values_list('vocabulary', flat=True)
+        {'text': v, 'category': cat, 'kind': 'vocabulary'}
+        for v, cat in Vocabulary.objects.values_list('vocabulary', 'category')
         if re.search(r'\b' + re.escape(v.lower()) + r'\b', essay_lower)
     ]
     phrase_hits = [
-        p for p in Phrase.objects.values_list('phrase', flat=True)
+        {'text': p, 'category': cat, 'kind': 'phrase'}
+        for p, cat in Phrase.objects.values_list('phrase', 'category')
         if p.lower() in essay_lower
     ]
-    bonus = min(0.3, 0.03 * (len(vivid_hits) + len(phrase_hits)))
+    all_hits = vivid_hits + phrase_hits
+    bonus = min(0.3, 0.03 * len(all_hits))
     fraction = min(1.0, ttr_score * 0.8 + bonus)
 
     note = f'Vocabulary variety score {unique_ratio:.2f} (unique/total words).'
-    if vivid_hits or phrase_hits:
-        sample = (vivid_hits + phrase_hits)[:8]
-        note += f' Used {len(vivid_hits) + len(phrase_hits)} vivid vocabulary/phrase bank word(s): {", ".join(sample)}.'
-    return fraction, note
+    if all_hits:
+        sample = [h['text'] for h in all_hits][:8]
+        note += f' Used {len(all_hits)} vivid vocabulary/phrase bank word(s): {", ".join(sample)}.'
+    return fraction, note, all_hits
 
 
 def _score_sentence_variety(sentences):
@@ -284,6 +287,7 @@ def grade_essay(text, qtype='Continuous', question_text=''):
             'total_max': max_marks['content'] + max_marks['language'],
             'breakdown': [],
             'misspelled_words': [],
+            'vivid_hits': [],
             'suggestions': ['Write your essay in the box above before grading.'],
         }
 
@@ -324,7 +328,7 @@ def grade_essay(text, qtype='Continuous', question_text=''):
     language_max = max_marks['language']
     spelling_frac, misspelled, spelling_note = _score_spelling(words)
     mechanics_frac, mechanics_note = _score_mechanics(sentences)
-    vocab_frac, vocab_note = _score_vocabulary(words, text)
+    vocab_frac, vocab_note, vivid_hits = _score_vocabulary(words, text)
     variety_frac, variety_note = _score_sentence_variety(sentences)
     style_frac, style_note = classify_essay(text)
 
@@ -380,5 +384,6 @@ def grade_essay(text, qtype='Continuous', question_text=''):
         'total_max': total_max,
         'breakdown': breakdown,
         'misspelled_words': misspelled,
+        'vivid_hits': vivid_hits,
         'suggestions': suggestions,
     }

@@ -2,14 +2,17 @@
 ML-based writing-quality classifier for the essay grader.
 
 There is no PSLE-graded score dataset to train on. Instead, this trains a
-binary classifier to tell genuine PSLE model-answer prose (from `model_ans`,
-already in the database) apart from programmatically degraded copies of the
-same text (punctuation stripped, sentences shuffled, misspellings injected,
-lowercased). The classifier's confidence that a submitted essay "reads like"
-the genuine class is one signal among several in grading.py - it is a
-statistical style/fluency estimate, not a judgement of whether the content
-itself is good, and it is only as good as the ~200 model answers it learns
-from.
+binary classifier to tell genuine, well-formed PSLE-style prose apart from
+programmatically degraded copies of the same text (punctuation stripped,
+sentences shuffled, misspellings injected, lowercased). The positive class
+is built from `model_ans` plus any student-submitted essay (`EssayAttempt`)
+that the rule-based grader itself scored highly (>= GOOD_ESSAY_PERCENT) -
+only high-scoring submissions qualify, so the training set grows and
+improves over time without being polluted by poorly-written essays being
+taught to the model as "genuine". The classifier's confidence that a
+submitted essay "reads like" the genuine class is one signal among several
+in grading.py - it is a statistical style/fluency estimate, not a judgement
+of whether the content itself is good.
 """
 
 import random
@@ -20,10 +23,12 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 
-from .models import ModelAns
+from .models import ModelAns, EssayAttempt
 
 MIN_POSITIVE_EXAMPLES = 20
 DEGRADATIONS_PER_EXAMPLE = 3
+GOOD_ESSAY_PERCENT = 80
+MIN_ESSAY_WORDS = 15
 
 _rng = random.Random(42)
 _lock = threading.Lock()
@@ -74,12 +79,16 @@ def _degrade(text):
 
 
 def _build_training_set():
-    answers = [a for a in ModelAns.objects.values_list('ans', flat=True) if a and len(a.split()) >= 15]
-    if len(answers) < MIN_POSITIVE_EXAMPLES:
+    positives = [a for a in ModelAns.objects.values_list('ans', flat=True) if a and len(a.split()) >= MIN_ESSAY_WORDS]
+    positives += [
+        a.essay_text for a in EssayAttempt.objects.filter(total_max__gt=0)
+        if a.essay_text and len(a.essay_text.split()) >= MIN_ESSAY_WORDS and a.percent >= GOOD_ESSAY_PERCENT
+    ]
+    if len(positives) < MIN_POSITIVE_EXAMPLES:
         return [], []
 
     texts, labels = [], []
-    for ans in answers:
+    for ans in positives:
         texts.append(ans)
         labels.append(1)
         for _ in range(DEGRADATIONS_PER_EXAMPLE):

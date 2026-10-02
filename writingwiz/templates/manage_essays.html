@@ -78,6 +78,10 @@ function hideAttemptDetails(id) {
              <div id="attemptDetailsPanel{{ a.id }}" class="attempt-details-panel" style="display: none;">
                <p style="margin-top: 8px;"><a href="#" onclick="hideAttemptDetails({{ a.id }}); return false;">&larr; Back to attempts</a></p>
                <p class="text-muted">{{ a.user.username }} &middot; {{ a.created_at|date:"d M Y, H:i" }} &middot; {{ a.total_score }} / {{ a.total_max }} ({{ a.percent }}%)</p>
+               <div class="well">
+                 <strong>Essay</strong>
+                 <p class="question-text" style="margin-top: 8px;">{{ a.essay_text|linebreaksbr }}</p>
+               </div>
                <table class="table table-bordered">
                  <thead><tr><th>Criterion</th><th>Score</th><th>Notes</th></tr></thead>
                  <tbody>

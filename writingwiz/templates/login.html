@@ -24,7 +24,7 @@
              </div>
              {% endif %}
 
-             <form action="/login/?url={{ next|default:'/' }}" method="post">
+             <form action="/login/?url={{ next }}" method="post">
                {% csrf_token %}
                <div class="form-group">
                  <label for="username">Email</label>
@@ -40,7 +40,7 @@
 
              {% if google_signin_enabled %}
              <p class="auth-divider">&mdash; or &mdash;</p>
-             <a href="{% provider_login_url 'google' next=next|default:'/' %}" class="btn btn-default btn-block">Sign in with Google</a>
+             <a href="{% if next %}{% provider_login_url 'google' next=next %}{% else %}{% provider_login_url 'google' %}{% endif %}" class="btn btn-default btn-block">Sign in with Google</a>
              {% endif %}
 
              <p class="auth-switch">Don't have an account? <a href="/register/">Register</a></p>

@@ -109,6 +109,33 @@ class EssayAttempt(models.Model):
     @property
     def percent(self):
         return round(self.total_score / self.total_max * 100) if self.total_max else 0
+    @property
+    def content_percent(self):
+        return round(self.content_score / self.content_max * 100) if self.content_max else 0
+    @property
+    def language_percent(self):
+        return round(self.language_score / self.language_max * 100) if self.language_max else 0
+
+class VividVocabularyUsage(models.Model):
+    """One row per vivid vocabulary/phrase bank entry detected in a graded
+    essay - powers the per-category vivid vocabulary leaderboard. A word
+    repeated several times in one essay is still only recorded once per
+    attempt (grading.py's detection is membership-based, not a count), so
+    this can't be gamed by spamming the same word."""
+    KIND_CHOICES = [
+        ('vocabulary', 'Vocabulary'),
+        ('phrase', 'Phrase'),
+    ]
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='vivid_vocabulary_usages')
+    attempt = models.ForeignKey(EssayAttempt, on_delete=models.CASCADE, related_name='vivid_vocabulary_usages')
+    kind = models.CharField(max_length=20, choices=KIND_CHOICES)
+    text = models.CharField(max_length=255)
+    category = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        db_table = 'vivid_vocabulary_usages'
+    def __str__(self):
+        return f'{self.user} used "{self.text}" ({self.category})'
 
 class SiteSettings(models.Model):
     """Singleton (always pk=1) holding site-wide toggles managed from /manage/."""
