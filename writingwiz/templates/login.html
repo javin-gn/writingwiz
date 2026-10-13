@@ -24,6 +24,14 @@
              </div>
              {% endif %}
 
+             {% if show_resend %}
+             <form method="post" action="/resend-verification/" class="alert alert-info">
+               {% csrf_token %}
+               <input type="hidden" name="username" value="{{ username }}">
+               Haven't received it? <button type="submit" class="btn-link-action">Resend verification email</button>
+             </form>
+             {% endif %}
+
              <form action="/login/?url={{ next }}" method="post">
                {% csrf_token %}
                <div class="form-group">

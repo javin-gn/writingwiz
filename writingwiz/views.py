@@ -25,10 +25,14 @@ import os
 import uuid
 
 from django.conf import settings
+from django.core.mail import send_mail
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
 
 from .models import (
 	Greeting, Questions, ModelAns, Pictorial, LearningVideo, Vocabulary, Phrase,
-	EssayAttempt, Announcement, SiteSettings, VividVocabularyUsage,
+	EssayAttempt, Announcement, SiteSettings, VividVocabularyUsage, UserProfile,
 	_next_question_id, _next_ans_id, _next_pic_id,
 )
 from .grading import grade_essay
@@ -48,6 +52,34 @@ def _session_user(request):
 	if request.user.is_authenticated:
 		return request.session.get('username', ''), request.session.get('superuser', '')
 	return '', ''
+
+def _send_verification_email(request, user):
+	link = request.build_absolute_uri(f'/verify-email/{user.id}/{user.userprofile.confirmation_code}/')
+	send_mail(
+		'Verify your WritingWiz account',
+		f'Hi {user.first_name or user.username},\n\n'
+		f'Thanks for signing up for WritingWiz. Please verify your email address by clicking the link below:\n\n'
+		f'{link}\n\n'
+		f"If you didn't sign up for WritingWiz, you can safely ignore this email.",
+		None,
+		[user.email],
+		fail_silently=False,
+	)
+
+def _send_password_reset_email(request, user):
+	uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+	token = default_token_generator.make_token(user)
+	link = request.build_absolute_uri(f'/reset-password/{uidb64}/{token}/')
+	send_mail(
+		'Reset your WritingWiz password',
+		f'Hi {user.first_name or user.username},\n\n'
+		f'We received a request to reset the password for your WritingWiz account. Click the link below to choose a new password:\n\n'
+		f'{link}\n\n'
+		f"If you didn't request this, you can safely ignore this email - your password won't change.",
+		None,
+		[user.email],
+		fail_silently=False,
+	)
 
 def login_required_view(view_func):
 	"""Redirects to /login/ (returning here afterwards) for full pages under
@@ -136,6 +168,7 @@ def login(request):
 	next_url = request.GET.get('url') or ''
 	errors = []
 	username = ''
+	show_resend = False
 
 	if request.GET.get('google_disabled'):
 		errors.append('Google Sign-In is currently disabled.')
@@ -157,7 +190,16 @@ def login(request):
 				redirect_to = '/dashboard/'
 			return HttpResponseRedirect(redirect_to)
 		elif User.objects.filter(username=username, is_active=False).exists():
-			errors.append('This account has been deactivated.')
+			inactive_user = User.objects.get(username=username)
+			# A signup still carries its (uncleared) confirmation_code until
+			# verified - once verified the code is cleared, so a cleared code
+			# on an inactive account means an admin deactivated it afterwards,
+			# not that it's still pending verification.
+			if getattr(inactive_user, 'userprofile', None) and inactive_user.userprofile.confirmation_code:
+				errors.append("Please verify your email address before logging in - check your inbox for the verification link.")
+				show_resend = True
+			else:
+				errors.append('This account has been deactivated.')
 		else:
 			errors.append('Incorrect email or password.')
 
@@ -165,6 +207,7 @@ def login(request):
 		'errors': errors,
 		'username': username,
 		'next': next_url,
+		'show_resend': show_resend,
 		'google_signin_enabled': site_settings.google_signin_enabled,
 		'user': '',
 		'superuser': '',
@@ -174,20 +217,111 @@ def login(request):
 def logout(request):
 	auth_logout(request)
 	request.session.flush()
-	return HttpResponseRedirect('/')
+	return render(request, 'logged_out.html', {'user': '', 'superuser': ''})
 
 #Login Page
 def forgotPwd(request):
 	if request.user.is_authenticated:
 		usr = request.session.get("username", "")
-		superuser = request.session.get("superuser", "") 
+		superuser = request.session.get("superuser", "")
 		return render(request, 'forgotpassword.html', {'user': usr, 'superuser': superuser})
 	else:
-		return render(request, 'forgotpassword.html', {'user': "", 'superuser': ""})		
+		return render(request, 'forgotpassword.html', {'user': "", 'superuser': ""})
 
+#Handles the POST from forgotpassword.html - always shows the same "check your
+#email" message regardless of whether the address is registered, so this can't
+#be used to enumerate accounts.
+def requestpassword(request):
+	if request.method != 'POST':
+		return HttpResponseRedirect('/forgotpassword/')
+
+	email = request.POST.get('email', '').strip()
+	user = User.objects.filter(username=email, is_active=True).first()
+	if user:
+		_send_password_reset_email(request, user)
+
+	return render(request, 'check_your_email.html', {
+		'user': '', 'superuser': '',
+		'heading': 'Check your email',
+		'message': f"If an account exists for {email}, we've sent a link to reset your password.",
+	})
+
+#Landed on from the link in the password reset email
+def reset_password(request, uidb64, token):
+	try:
+		uid = force_str(urlsafe_base64_decode(uidb64))
+		user = User.objects.get(pk=uid)
+	except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+		user = None
+
+	valid = user is not None and default_token_generator.check_token(user, token)
+	if not valid:
+		return render(request, 'reset_password.html', {'user': '', 'superuser': '', 'valid': False})
+
+	errors = []
+	if request.method == 'POST':
+		password = request.POST.get('password', '')
+		cfmpassword = request.POST.get('cfmpassword', '')
+		if not password:
+			errors.append('Password is empty.')
+		if password != cfmpassword:
+			errors.append('Password does not match.')
+		if not errors:
+			user.set_password(password)
+			user.save()
+			return render(request, 'check_your_email.html', {
+				'user': '', 'superuser': '',
+				'heading': 'Password updated',
+				'message': 'Your password has been reset. You can now log in with your new password.',
+			})
+
+	return render(request, 'reset_password.html', {
+		'user': '', 'superuser': '',
+		'valid': True,
+		'errors': errors,
+		'email': user.email,
+	})
+
+#Landed on from the link in the signup verification email
+def verify_email(request, uid, code):
+	user = User.objects.filter(pk=uid).first()
+	profile = getattr(user, 'userprofile', None) if user else None
+
+	if user and profile and not user.is_active and code and profile.confirmation_code == code:
+		user.is_active = True
+		user.save()
+		profile.confirmation_code = ''
+		profile.save()
+		auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+		request.session['username'] = user.username
+		request.session['superuser'] = user.is_superuser
+		return render(request, 'email_verified.html', {'user': user.username, 'superuser': user.is_superuser, 'success': True})
+
+	return render(request, 'email_verified.html', {'user': '', 'superuser': '', 'success': False})
+
+#Re-sends the verification email for an inactive, not-yet-verified account -
+#same generic response regardless of outcome, so this can't be used to
+#enumerate accounts either.
+def resend_verification(request):
+	if request.method != 'POST':
+		return HttpResponseRedirect('/login/')
+
+	username = request.POST.get('username', '').strip()
+	user = User.objects.filter(username=username, is_active=False).first()
+	if user and getattr(user, 'userprofile', None) and user.userprofile.confirmation_code:
+		user.userprofile.confirmation_code = uuid.uuid4().hex
+		user.userprofile.save()
+		_send_verification_email(request, user)
+
+	return render(request, 'check_your_email.html', {
+		'user': '', 'superuser': '',
+		'heading': 'Check your email',
+		'message': "If that account is still awaiting verification, we've sent a new verification link to its email address.",
+	})
 
 #Functions
-#Register an account with an email address and password, active immediately (no email verification)
+#Register an account with an email address and password - inactive until the
+#link in the verification email is clicked (see verify_email above)
 def signup(request):
 	errors = []
 	if request.method == 'POST':
@@ -219,10 +353,17 @@ def signup(request):
 			user = User.objects.create_user(request.POST['username'], request.POST['username'], request.POST['password'])
 			user.first_name = first_name
 			user.last_name = last_name
-			user.is_active = True
+			user.is_active = False
 			user.save()
-			auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-			return HttpResponseRedirect('/dashboard/')
+			profile = user.userprofile
+			profile.confirmation_code = uuid.uuid4().hex
+			profile.save()
+			_send_verification_email(request, user)
+			return render(request, 'check_your_email.html', {
+				'user': '', 'superuser': '',
+				'heading': 'Verify your email',
+				'message': f"We've sent a verification link to {user.email}. Click it to activate your account and log in.",
+			})
 		else:
 			return render(request, 'register.html', {
 				'errors': errors,
@@ -474,9 +615,6 @@ def essay_grader(request):
 		usr = ""
 		superuser = ""
 
-	result = None
-	essay_text = ''
-
 	if request.method == 'POST':
 		essay_text = request.POST.get('essay', '')
 		qtype = request.POST.get('qtype', 'Continuous')
@@ -513,7 +651,9 @@ def essay_grader(request):
 			)
 			for hit in result['vivid_hits']
 		])
+		return HttpResponseRedirect(f'/grader/result/{attempt.id}/')
 	else:
+		essay_text = ''
 		qtype = request.GET.get('qtype', 'Continuous')
 		if qtype not in QUESTION_TYPES:
 			qtype = 'Continuous'
@@ -541,6 +681,24 @@ def essay_grader(request):
 		'question_id': question_id,
 		'vocab_suggestions': vocab_suggestions,
 		'attempt_history': attempt_history,
+		'user': usr,
+		'superuser': superuser,
+	})
+
+#Dedicated page for one grading result, landed on after submitting from essay_grader
+@login_required_view
+def grader_result(request, attempt_id):
+	if request.user.is_authenticated:
+		usr = request.session.get("username", "")
+		superuser = request.session.get("superuser", "")
+	else:
+		usr = ""
+		superuser = ""
+
+	attempt = get_object_or_404(EssayAttempt, pk=attempt_id, user=request.user)
+
+	return render(request, 'grader_result.html', {
+		'attempt': attempt,
 		'user': usr,
 		'superuser': superuser,
 	})

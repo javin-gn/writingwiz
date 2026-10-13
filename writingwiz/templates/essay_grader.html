@@ -48,23 +48,6 @@ function plainTextToEditorHtml(text) {
 	}).join('');
 }
 
-// Swap the attempts summary table for a full-width breakdown panel, rather
-// than nesting the breakdown table inside a narrow table cell.
-function showAttemptDetails(id) {
-	var summary = document.getElementById('attemptsSummaryPanel');
-	if (summary) { summary.style.display = 'none'; }
-	document.querySelectorAll('.attempt-details-panel').forEach(function (el) { el.style.display = 'none'; });
-	var panel = document.getElementById('attemptDetailsPanel' + id);
-	if (panel) { panel.style.display = 'block'; }
-}
-
-function hideAttemptDetails(id) {
-	var panel = document.getElementById('attemptDetailsPanel' + id);
-	if (panel) { panel.style.display = 'none'; }
-	var summary = document.getElementById('attemptsSummaryPanel');
-	if (summary) { summary.style.display = 'block'; }
-}
-
 document.addEventListener('DOMContentLoaded', function () {
 	var essayEl = document.getElementById('essay');
 	essayEl.value = plainTextToEditorHtml(essayEl.value);
@@ -101,165 +84,64 @@ document.addEventListener('DOMContentLoaded', function () {
            <h1>PSLE English Essay Grader</h1>
            <p class="text-muted">This is a <strong>rule-based</strong> checker, not an AI marker - it checks spelling, sentence mechanics, length, paragraphing and vocabulary variety, and gives a rough content-relevance score against the question shown below. It cannot judge whether your story actually makes sense or is well told, the way a real teacher can. Use it as a checklist, not a final grade.</p>
 
-           <div class="row">
-             <div class="col-lg-6">
-               <div class="form-group">
-                 <label>Writing Type</label><br/>
-                 <a href="/grader/?qtype=Continuous" class="btn btn-default {% if qtype == "Continuous" %}active{% endif %}">Continuous Writing</a>
-                 <a href="/grader/?qtype=Situational" class="btn btn-default {% if qtype == "Situational" %}active{% endif %}">Situational Writing</a>
-               </div>
-
-               <p class="badge-legend"><span class="question-category-badge">Category</span> <span class="question-theme-badge">Theme</span></p>
-
-               <div class="well">
-                 {% if question %}
-                   <p><span class="question-category-badge">{{ question.questionCategory }}</span> {% if question.theme %}<span class="question-theme-badge">{{ question.theme }}</span>{% endif %}</p>
-                   <p class="question-text">{{ question.question|linebreaksbr }}</p>
-                   {% for pic in question.pictorial_set.all %}
-                     <img src="/static/pictures/{{ pic.url }}" class="question-picture" alt="">
-                   {% endfor %}
-                 {% else %}
-                   <p class="text-muted">No {{ qtype }} questions available.</p>
-                 {% endif %}
-                 <a href="/grader/?qtype={{ qtype }}" class="btn btn-default btn-sm">&#8635; New Question</a>
-               </div>
-
-               <div class="alert alert-info">
-                 <strong>Vivid vocabulary for this theme:</strong>
-                 <p class="text-muted" style="margin: 4px 0 8px;">Matched on theme only - vocabulary/phrase categories (Emotions, Actions &amp; Movements, ...) don't correspond to question categories (Letter, Picture-Based, ...), so no suggestion can honestly be made from category.</p>
-                 {% if vocab_suggestions %}
-                   {% for w in vocab_suggestions %}<span class="question-theme-badge">{{ w }}</span> {% endfor %}
-                 {% elif question.theme %}
-                   <p class="text-muted">No vivid vocabulary/phrases tagged with the "{{ question.theme }}" theme yet.</p>
-                 {% else %}
-                   <p class="text-muted">Situational questions aren't tagged with a theme, so there's nothing to match vocabulary against here. Try a Continuous Writing question instead.</p>
-                 {% endif %}
-               </div>
-
-               <form method="post" action="/grader/" id="essayForm">
-                 {% csrf_token %}
-                 <input type="hidden" name="qtype" value="{{ qtype }}">
-                 <input type="hidden" name="question_id" value="{{ question_id }}">
-
-                 <div class="form-group">
-                   <label for="essay">Your Essay</label>
-                   <textarea name="essay" id="essay" class="form-control" rows="16">{{ essay_text }}</textarea>
-                   <p class="text-muted" id="wordCount" style="margin-top: 4px;">0 words</p>
-                 </div>
-
-                 <button type="submit" class="btn btn-primary">Grade Essay</button>
-               </form>
-             </div>
-
-             <div class="col-lg-6">
-               {% if attempt_history %}
-                 {% with latest=attempt_history.0 %}
-                 <div class="well">
-                   <strong>Latest Attempt</strong>
-                   <p class="text-muted" style="margin: 4px 0 12px;">{{ latest.created_at|date:"d M Y, H:i" }}</p>
-                   <h2>{{ latest.total_score }} / {{ latest.total_max }}</h2>
-                   <div class="progress">
-                     <div class="progress-bar" role="progressbar" style="width: {% widthratio latest.total_score latest.total_max 100 %}%;">
-                       {% widthratio latest.total_score latest.total_max 100 %}%
-                     </div>
-                   </div>
-                   <p>Content: {{ latest.content_score }} / {{ latest.content_max }} &nbsp; | &nbsp; Language: {{ latest.language_score }} / {{ latest.language_max }}</p>
-                 </div>
-
-                 {% if latest.vivid_vocabulary_usages.all %}
-                 <div class="alert alert-info">
-                   <strong>Vivid vocabulary detected ({{ latest.vivid_vocabulary_usages.all|length }}):</strong>
-                   <p class="text-muted" style="margin: 4px 0 8px;">Counted towards your <a href="/leaderboard/">Vivid Vocabulary Leaderboard</a> ranking.</p>
-                   {% for v in latest.vivid_vocabulary_usages.all %}<span class="question-theme-badge">{{ v.text }}</span> {% endfor %}
-                 </div>
-                 {% endif %}
-
-                 {% if latest.suggestions %}
-                 <div class="alert alert-info">
-                   <strong>Suggestions:</strong>
-                   <ul>
-                     {% for s in latest.suggestions %}<li>{{ s }}</li>{% endfor %}
-                   </ul>
-                 </div>
-                 {% endif %}
-
-                 {% if latest.breakdown %}
-                 <table class="table table-bordered">
-                   <thead><tr><th>Criterion</th><th>Score</th><th>Notes</th></tr></thead>
-                   <tbody>
-                     {% for b in latest.breakdown %}
-                     <tr>
-                       <td>{{ b.label }}</td>
-                       <td>{{ b.score }} / {{ b.max }}</td>
-                       <td>{{ b.note }}</td>
-                     </tr>
-                     {% endfor %}
-                   </tbody>
-                 </table>
-                 {% endif %}
-                 {% endwith %}
-               {% else %}
-                 <p class="text-muted">Your score and feedback will appear here after you submit an essay.</p>
-               {% endif %}
-
-               {% if attempt_history|length > 1 %}
-               <div class="well">
-                 <strong>Previous Attempts</strong>
-
-                 <div id="attemptsSummaryPanel">
-                   <table class="table table-bordered" style="margin-top: 8px;">
-                     <thead><tr><th>Date</th><th>Content</th><th>Language</th><th>Total</th><th>%</th><th></th></tr></thead>
-                     <tbody>
-                       {% for a in attempt_history %}
-                       {% if not forloop.first %}
-                       <tr>
-                         <td>{{ a.created_at|date:"d M Y, H:i" }}</td>
-                         <td>{{ a.content_score }} / {{ a.content_max }}</td>
-                         <td>{{ a.language_score }} / {{ a.language_max }}</td>
-                         <td>{{ a.total_score }} / {{ a.total_max }}</td>
-                         <td>{{ a.percent }}%</td>
-                         <td>{% if a.breakdown %}<a href="#" onclick="showAttemptDetails({{ a.id }}); return false;">Details</a>{% endif %}</td>
-                       </tr>
-                       {% endif %}
-                       {% endfor %}
-                     </tbody>
-                   </table>
-                 </div>
-
-                 {% for a in attempt_history %}
-                 {% if not forloop.first and a.breakdown %}
-                 <div id="attemptDetailsPanel{{ a.id }}" class="attempt-details-panel" style="display: none;">
-                   <p style="margin-top: 8px;"><a href="#" onclick="hideAttemptDetails({{ a.id }}); return false;">&larr; Back to attempts</a></p>
-                   <p class="text-muted">{{ a.created_at|date:"d M Y, H:i" }} &middot; {{ a.total_score }} / {{ a.total_max }} ({{ a.percent }}%)</p>
-                   <div class="well">
-                     <strong>Your Essay</strong>
-                     <p class="question-text" style="margin-top: 8px;">{{ a.essay_text|linebreaksbr }}</p>
-                   </div>
-                   {% if a.suggestions %}
-                   <div class="alert alert-info">
-                     <strong>Suggestions:</strong>
-                     <ul>{% for s in a.suggestions %}<li>{{ s }}</li>{% endfor %}</ul>
-                   </div>
-                   {% endif %}
-                   <table class="table table-bordered">
-                     <thead><tr><th>Criterion</th><th>Score</th><th>Notes</th></tr></thead>
-                     <tbody>
-                       {% for b in a.breakdown %}
-                       <tr>
-                         <td>{{ b.label }}</td>
-                         <td>{{ b.score }} / {{ b.max }}</td>
-                         <td>{{ b.note }}</td>
-                       </tr>
-                       {% endfor %}
-                     </tbody>
-                   </table>
-                 </div>
-                 {% endif %}
-                 {% endfor %}
-               </div>
-               {% endif %}
-             </div>
+           <div class="form-group">
+             <label>Writing Type</label><br/>
+             <a href="/grader/?qtype=Continuous" class="btn btn-default {% if qtype == "Continuous" %}active{% endif %}">Continuous Writing</a>
+             <a href="/grader/?qtype=Situational" class="btn btn-default {% if qtype == "Situational" %}active{% endif %}">Situational Writing</a>
            </div>
+
+           <p class="badge-legend"><span class="question-category-badge">Category</span> <span class="question-theme-badge">Theme</span></p>
+
+           <div class="well">
+             {% if question %}
+               <p><span class="question-category-badge">{{ question.questionCategory }}</span> {% if question.theme %}<span class="question-theme-badge">{{ question.theme }}</span>{% endif %}</p>
+               <p class="question-text">{{ question.question|linebreaksbr }}</p>
+               {% for pic in question.pictorial_set.all %}
+                 <img src="/static/pictures/{{ pic.url }}" class="question-picture" alt="">
+               {% endfor %}
+             {% else %}
+               <p class="text-muted">No {{ qtype }} questions available.</p>
+             {% endif %}
+             <a href="/grader/?qtype={{ qtype }}" class="btn btn-default btn-sm">&#8635; New Question</a>
+           </div>
+
+           <div class="well">
+             <strong>Last Attempt on This Question</strong>
+             {% if attempt_history %}
+             {% with latest=attempt_history.0 %}
+             <p style="margin: 8px 0 4px;">{{ latest.created_at|date:"d M Y, H:i" }} &middot; <strong>{{ latest.total_score }} / {{ latest.total_max }}</strong> ({{ latest.percent }}%)</p>
+             <p class="text-muted" style="margin-bottom: 0;"><a href="/grader/result/{{ latest.id }}/">View this result &rarr;</a> &nbsp;|&nbsp; <a href="/dashboard/">View all your results on your Dashboard &rarr;</a></p>
+             {% endwith %}
+             {% else %}
+             <p class="text-muted" style="margin-top: 8px;">You haven't attempted this question yet. Your latest score will appear here once you have.</p>
+             {% endif %}
+           </div>
+
+           <div class="alert alert-info">
+             <strong>Vivid vocabulary for this theme:</strong>
+             <p class="text-muted" style="margin: 4px 0 8px;">Matched on theme only - vocabulary/phrase categories (Emotions, Actions &amp; Movements, ...) don't correspond to question categories (Letter, Picture-Based, ...), so no suggestion can honestly be made from category.</p>
+             {% if vocab_suggestions %}
+               {% for w in vocab_suggestions %}<span class="question-theme-badge">{{ w }}</span> {% endfor %}
+             {% elif question.theme %}
+               <p class="text-muted">No vivid vocabulary/phrases tagged with the "{{ question.theme }}" theme yet.</p>
+             {% else %}
+               <p class="text-muted">Situational questions aren't tagged with a theme, so there's nothing to match vocabulary against here. Try a Continuous Writing question instead.</p>
+             {% endif %}
+           </div>
+
+           <form method="post" action="/grader/" id="essayForm">
+             {% csrf_token %}
+             <input type="hidden" name="qtype" value="{{ qtype }}">
+             <input type="hidden" name="question_id" value="{{ question_id }}">
+
+             <div class="form-group">
+               <label for="essay">Your Essay</label>
+               <textarea name="essay" id="essay" class="form-control" rows="20">{{ essay_text }}</textarea>
+               <p class="text-muted" id="wordCount" style="margin-top: 4px;">0 words</p>
+             </div>
+
+             <button type="submit" class="btn btn-primary">Grade Essay</button>
+           </form>
          </div>
     </div>
 {% endblock %}

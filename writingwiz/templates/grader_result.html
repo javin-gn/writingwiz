@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}
+	<title>A&#42; Composition - Essay Result</title>
+{% endblock %}
+
+{% block statics %}
+{% endblock %}
+
+{% block contents %}
+    <div class="container">
+         <div class="page-header" id="banner">
+           <h1>Your Essay Result</h1>
+           <p class="text-muted">{{ attempt.created_at|date:"d M Y, H:i" }}{% if attempt.question %} &middot; {{ attempt.question.questionCategory }}{% endif %}</p>
+
+           {% if attempt.question %}
+           <div class="well">
+             <p><span class="question-category-badge">{{ attempt.question.questionCategory }}</span> {% if attempt.question.theme %}<span class="question-theme-badge">{{ attempt.question.theme }}</span>{% endif %}</p>
+             <p class="question-text">{{ attempt.question.question|linebreaksbr }}</p>
+           </div>
+           {% endif %}
+
+           <div class="row">
+             <div class="col-lg-6">
+               <div class="well">
+                 <h2>{{ attempt.total_score }} / {{ attempt.total_max }} <small class="text-muted">({{ attempt.percent }}%)</small></h2>
+                 <div class="progress">
+                   <div class="progress-bar" role="progressbar" style="width: {% widthratio attempt.total_score attempt.total_max 100 %}%;"></div>
+                 </div>
+                 <p>Content: {{ attempt.content_score }} / {{ attempt.content_max }} &nbsp; | &nbsp; Language: {{ attempt.language_score }} / {{ attempt.language_max }}</p>
+               </div>
+
+               {% if attempt.vivid_vocabulary_usages.all %}
+               <div class="alert alert-info">
+                 <strong>Vivid vocabulary detected ({{ attempt.vivid_vocabulary_usages.all|length }}):</strong>
+                 <p class="text-muted" style="margin: 4px 0 8px;">Counted towards your <a href="/leaderboard/">Vivid Vocabulary Leaderboard</a> ranking.</p>
+                 {% for v in attempt.vivid_vocabulary_usages.all %}<span class="question-theme-badge">{{ v.text }}</span> {% endfor %}
+               </div>
+               {% endif %}
+
+               {% if attempt.suggestions %}
+               <div class="alert alert-info">
+                 <strong>Suggestions:</strong>
+                 <ul>
+                   {% for s in attempt.suggestions %}<li>{{ s }}</li>{% endfor %}
+                 </ul>
+               </div>
+               {% endif %}
+
+               {% if attempt.breakdown %}
+               <table class="table table-bordered">
+                 <thead><tr><th>Criterion</th><th>Score</th><th>Notes</th></tr></thead>
+                 <tbody>
+                   {% for b in attempt.breakdown %}
+                   <tr>
+                     <td>{{ b.label }}</td>
+                     <td>{{ b.score }} / {{ b.max }}</td>
+                     <td>{{ b.note }}</td>
+                   </tr>
+                   {% endfor %}
+                 </tbody>
+               </table>
+               {% endif %}
+             </div>
+
+             <div class="col-lg-6">
+               <div class="well">
+                 <strong>Your Essay</strong>
+                 <p class="question-text" style="margin-top: 8px;">{{ attempt.essay_text|linebreaksbr }}</p>
+               </div>
+             </div>
+           </div>
+
+           <p>
+             {% if attempt.question %}
+             <a href="/grader/?question_id={{ attempt.question.questionid }}" class="btn btn-primary">Retry This Question</a>
+             {% endif %}
+             <a href="/grader/?qtype={{ attempt.qtype }}" class="btn btn-default">Try Another Essay</a>
+             <a href="/dashboard/" class="btn btn-default">Back to Dashboard</a>
+           </p>
+         </div>
+    </div>
+{% endblock %}

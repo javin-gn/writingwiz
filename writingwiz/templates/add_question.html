@@ -5,7 +5,81 @@
 {% endblock %}
 
 {% block statics %}
+<script src="/static/scripts/tinymce/tinymce.min.js" referrerpolicy="origin"></script>
 <script type="text/javascript" charset="utf-8">
+	// Mirrors essay_grader.html's conversion - the question/answer are stored
+	// as plain text with blank-line paragraph breaks (templates render them
+	// with |linebreaksbr), not HTML, so TinyMCE's HTML must be converted back
+	// to that plain-text form before the textarea is submitted.
+	function editorHtmlToPlainText(html) {
+		var container = document.createElement('div');
+		container.innerHTML = html;
+		var blocks = container.querySelectorAll('p, li, div, h1, h2, h3, blockquote');
+		if (blocks.length === 0) {
+			return (container.textContent || '').trim();
+		}
+		var parts = [];
+		blocks.forEach(function (el) {
+			el.querySelectorAll('br').forEach(function (br) { br.replaceWith('\n'); });
+			var t = el.textContent.replace(/\n{2,}/g, '\n').trim();
+			if (t) { parts.push(t); }
+		});
+		return parts.join('\n\n');
+	}
+
+	function plainTextToEditorHtml(text) {
+		if (!text) { return ''; }
+		return text.split(/\n\s*\n/).map(function (para) {
+			var lineDiv = document.createElement('div');
+			var html = para.split('\n').map(function (line) {
+				lineDiv.textContent = line;
+				return lineDiv.innerHTML;
+			}).join('<br>');
+			return '<p>' + html + '</p>';
+		}).join('');
+	}
+
+	document.addEventListener('DOMContentLoaded', function () {
+		['question', 'answer'].forEach(function (id) {
+			var el = document.getElementById(id);
+			if (!el) { return; }
+			el.value = plainTextToEditorHtml(el.value);
+		});
+
+		tinymce.init({
+			selector: '#question',
+			height: 150,
+			menubar: false,
+			statusbar: false,
+			branding: false,
+			plugins: 'lists',
+			toolbar: 'undo redo | bold italic underline | bullist numlist | removeformat',
+			content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.6; }',
+		});
+		tinymce.init({
+			selector: '#answer',
+			height: 420,
+			menubar: false,
+			statusbar: false,
+			branding: false,
+			plugins: 'lists',
+			toolbar: 'undo redo | bold italic underline | bullist numlist | removeformat',
+			content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.6; }',
+		});
+
+		var form = document.querySelector('form[action="/insert_question/"]');
+		if (form) {
+			form.addEventListener('submit', function () {
+				['question', 'answer'].forEach(function (id) {
+					var editor = tinymce.get(id);
+					if (editor) {
+						editor.getElement().value = editorHtmlToPlainText(editor.getContent());
+					}
+				});
+			});
+		}
+	});
+
 	$(document).ready(function() {
 		var pret;
 		var prec;
@@ -78,16 +152,16 @@
 				 </div>
 			     {% endif %}
             
-			     <form enctype="multipart/form-data" class="form-horizontal" style="float:left;" action="/insert_question/" method="post">
+			     <form enctype="multipart/form-data" class="form-horizontal" action="/insert_question/" method="post">
 				   {% csrf_token %}
 			     <fieldset>
 			       <div class="form-group">
 			         <label for="question" class="col-lg-2 control-label">Question</label>
 			         <div class="col-lg-10">
 						 {% if question %}
-						 <textarea name="question" class="form-control" cols="90" rows="3">{{question}}</textarea>
+						 <textarea name="question" id="question" class="form-control" cols="90" rows="3">{{question}}</textarea>
 						 {% else %}
-						  <textarea name="question" class="form-control" cols="90" rows="3">Type your question here</textarea>
+						  <textarea name="question" id="question" class="form-control" cols="90" rows="3">Type your question here</textarea>
 						 {% endif %}
 			         </div>
 			       </div>
@@ -120,9 +194,9 @@
 			         <label for="answer" class="col-lg-2 control-label">Answer</label>
 			         <div class="col-lg-10">
 						 {% if answer %}
-						 <textarea name="answer" class="form-control" cols="90" rows="20">{{answer}}</textarea>
+						 <textarea name="answer" id="answer" class="form-control" cols="90" rows="20">{{answer}}</textarea>
 						 {% else %}
-						 <textarea name="answer" class="form-control" cols="90" rows="20">Type your answer here</textarea>
+						 <textarea name="answer" id="answer" class="form-control" cols="90" rows="20">Type your answer here</textarea>
 						 {%endif%}
 			         </div>
 			       </div>

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}
+	<title>WritingWiz - Logged Out</title>
+{% endblock %}
+
+{% block statics %}
+{% endblock %}
+
+{% block contents %}
+    <div class="container">
+         <div class="page-header" id="banner">
+
+           <div class="auth-card">
+             <h1>You've been logged out</h1>
+             <p class="text-muted">Thanks for practicing with WritingWiz. Log back in any time to pick up where you left off.</p>
+
+             <a href="/login/" class="btn btn-primary btn-block">Log In Again</a>
+             <p class="auth-switch"><a href="/">&larr; Back to home</a></p>
+           </div>
+
+         </div>
+    </div>
+{% endblock %}

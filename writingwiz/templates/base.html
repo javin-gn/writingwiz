@@ -49,9 +49,7 @@
 	      </ul>
 	      <ul class="nav navbar-nav navbar-right">
 			  {% if user %}
-			  {% if not superuser %}
 			  <li><a href="/dashboard/">Dashboard</a></li>
-			  {% endif %}
 			  <li><a href="/profile/">{{ user }}</a></li>
 			  <li><a href="/logout">Logout</a></li>
 			  {% else %}
